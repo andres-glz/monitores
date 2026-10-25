@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ArrowLeft, Check, CircleCheck, MonitorX, Plus, Power, Save, ScanBarcode, Trash2, TriangleAlert, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import { useAuth } from '../auth/AuthContext'
 import { BarcodeScanner } from '../components/BarcodeScanner'
@@ -135,8 +135,11 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
   const isEdit = existing !== null
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const confirm = useConfirm()
   const hospitalMonitors = useHospitalMonitors(hospitalId)
+  // La lista del hospital manda su URL con filtros para regresar a ella tal como estaba
+  const backTo = (location.state as { backTo?: string } | null)?.backTo ?? `/hospitals/${hospitalId}`
 
   const [uuid, setUuid] = useState(() => existing?.uuid ?? newUuid())
   const [form, setForm] = useState<FormState>(() => (existing ? formFromMonitor(existing) : blankForm(catalog, hospitalId)))
@@ -293,7 +296,7 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
     const label = [catalog.modelLabel(input.monitor_model_id), input.serial_number ?? input.inventory_number].filter(Boolean).join(' · ')
     if (mode === 'exit' || isEdit) {
       toast.success(isEdit ? 'Cambios guardados' : 'Monitor guardado', { description: label })
-      navigate(`/hospitals/${hospitalId}`)
+      navigate(backTo)
       return
     }
     toast.success('Monitor guardado', { description: label })
@@ -311,7 +314,7 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
     if (!accepted) return
     await deleteMonitor(uuid)
     toast.success('Monitor eliminado')
-    navigate(`/hospitals/${hospitalId}`, { replace: true })
+    navigate(backTo, { replace: true })
   }
 
   const leave = async () => {
@@ -324,7 +327,7 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
       })
       if (!accepted) return
     }
-    navigate(`/hospitals/${hospitalId}`)
+    navigate(backTo)
   }
 
   // Ctrl/Cmd + Enter guarda (y en captura nueva pasa al siguiente)
@@ -377,7 +380,7 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
           <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30">
             <CircleCheck className="size-4 shrink-0" />
             <span className="min-w-0 flex-1 truncate">Guardado: {lastSaved.label}</span>
-            <Link to={`/hospitals/${hospitalId}/monitors/${lastSaved.uuid}`} className="shrink-0 font-semibold underline underline-offset-2">
+            <Link to={`/hospitals/${hospitalId}/monitors/${lastSaved.uuid}`} state={{ backTo }} className="shrink-0 font-semibold underline underline-offset-2">
               Editar
             </Link>
           </div>

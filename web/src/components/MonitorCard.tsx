@@ -1,17 +1,25 @@
 import { CloudUpload, Image, MapPin } from 'lucide-react'
 import { Link } from 'react-router'
-import type { MonitorRow } from '../lib/monitorView'
+import { monitorPath, type MonitorRow } from '../lib/monitorView'
 import { StatusBadge } from './ui/StatusBadge'
+
+interface MonitorCardProps {
+  row: MonitorRow
+  showHospital?: boolean
+  /** Adónde regresa el detalle del monitor (por defecto, al hospital) */
+  backTo?: string
+}
 
 /**
  * Tarjeta de un monitor en listas y resultados de búsqueda.
  */
-export function MonitorCard({ row, showHospital = false }: { row: MonitorRow; showHospital?: boolean }) {
+export function MonitorCard({ row, showHospital = false, backTo }: MonitorCardProps) {
   const { monitor } = row
 
   return (
     <Link
-      to={`/hospitals/${monitor.hospital_id}/monitors/${monitor.uuid}`}
+      to={monitorPath(monitor)}
+      state={backTo ? { backTo } : undefined}
       className="block rounded-xl bg-white p-3.5 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md hover:ring-teal-300 dark:bg-slate-900 dark:ring-slate-800 dark:hover:ring-teal-500/40"
     >
       <div className="flex items-start justify-between gap-2">

@@ -1,3 +1,5 @@
+import { readJson as read, writeJson as write } from './storage'
+
 // Recuerda las últimas selecciones de captura para agilizar el siguiente registro
 
 interface CapturePrefs {
@@ -8,23 +10,6 @@ interface CapturePrefs {
 const prefsKey = (hospitalId: number) => `monitores:capture:${hospitalId}`
 const RECENT_MODELS_KEY = 'monitores:recent-models'
 const MAX_RECENT = 4
-
-function read<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : fallback
-  } catch {
-    return fallback
-  }
-}
-
-function write(key: string, value: unknown): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(value))
-  } catch {
-    // Sin almacenamiento disponible simplemente no se recuerda
-  }
-}
 
 export function loadCapturePrefs(hospitalId: number): CapturePrefs {
   return read<CapturePrefs>(prefsKey(hospitalId), {})

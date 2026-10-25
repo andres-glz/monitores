@@ -14,6 +14,10 @@ Aplicación web para hacer **inventario y diagnóstico** de los monitores de sig
 - **Dictamen automático**: Completo, Funcional incompleto o No funcional.
 - **Funciona sin conexión** (PWA): todo se guarda en el dispositivo y se sincroniza solo al volver la señal.
 - **Búsqueda por coincidencia** (serie, NNI, servicio, modelo, ubicación) en un hospital o en todos.
+- **Lista del hospital en tarjetas o en tabla**:
+  - Filtros por dictamen, marca, modelo (en cascada: solo los modelos de la marca elegida) y servicio, más la búsqueda, que también acepta la serie o el NNI leídos con la **cámara**.
+  - En la tabla se eligen las columnas que se muestran (si son muchas, la tabla se desliza hacia los lados), se ordena tocando el encabezado y cada renglón abre el detalle del monitor.
+  - Los filtros quedan en la dirección de la página, así que se conservan al abrir un monitor y regresar. La vista y las columnas elegidas se recuerdan en cada dispositivo.
 - **Reporte PDF** “Diagnóstico de monitores de signos vitales. *Hospital*”: indicadores y gráfica en la primera página, detalle por equipo con consumibles funcionales / no funcionales / faltantes, y al final estadísticas (faltantes y fallas por tipo, estado por grupo, necesidades de reposición, fallas más frecuentes, equipos por modelo y equipos no funcionales).
 - **Excel** con hojas: Resumen, Monitores, Consumibles, Reposición y Por modelo.
 - **Usuarios con inicio de sesión** (todos con el mismo nivel de acceso); se registra quién capturó cada equipo.

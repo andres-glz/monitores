@@ -106,7 +106,8 @@ Cualquier cambio a la regla va en los dos. En `lib/status.ts` también están lo
   - `registerType: 'prompt'`: la app avisa con `ReloadPrompt` en lugar de recargarse a media captura.
   - El precache incluye `.wasm` y permite archivos de hasta 10 MB, porque los chunks de PDF, Excel y del lector son grandes.
   - `/api` está excluido de `navigateFallback`.
-- Las preferencias locales van en `localStorage` con el prefijo `monitores:` (`lib/capturePrefs.ts`, `lib/theme.ts`).
+- Las preferencias locales van en `localStorage` con el prefijo `monitores:` (`lib/storage.ts`, que usan `lib/capturePrefs.ts` y `lib/listPrefs.ts`; `lib/theme.ts` tiene su propia lectura porque `index.html` lee la misma clave).
+- **Lista del hospital** (`HospitalPage`): los filtros y el orden viven en la URL (`?q=&status=&brand=&model=&service=&sort=`, con `-` al inicio de `sort` para descendente). Para regresar con ellos, las tarjetas, la tabla y los enlaces de captura mandan `state.backTo` con la URL actual, y `MonitorFormPage` navega a ese `backTo` al salir, guardar o eliminar. La vista (tarjetas o tabla) y las columnas visibles son preferencias del dispositivo (`lib/listPrefs.ts`). Las columnas de la tabla se definen en `MONITOR_COLUMNS` (`components/MonitorTable.tsx`); una columna nueva va ahí con su `sortValue` y su `render`.
 
 ### Estilos y modo oscuro
 

@@ -52,6 +52,18 @@ export function countConditions(monitor: Pick<Monitor, 'consumables'>): { missin
   return { missing, faulty }
 }
 
+export function monitorPath(monitor: Pick<Monitor, 'hospital_id' | 'uuid'>): string {
+  return `/hospitals/${monitor.hospital_id}/monitors/${monitor.uuid}`
+}
+
+/** Orden dentro de un servicio: por ubicación (cama 2 antes que cama 10) y luego por número de serie */
+export function compareByLocation(a: MonitorRow, b: MonitorRow): number {
+  return (
+    (a.monitor.location ?? '').localeCompare(b.monitor.location ?? '', 'es', { numeric: true }) ||
+    (a.monitor.serial_number ?? '').localeCompare(b.monitor.serial_number ?? '')
+  )
+}
+
 /** Búsqueda por coincidencia: todas las palabras deben aparecer (sin importar acentos ni mayúsculas) */
 export function matchesQuery(row: MonitorRow, query: string): boolean {
   const terms = searchable(query).split(/\s+/).filter(Boolean)
