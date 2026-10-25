@@ -1,0 +1,9 @@
+# Saltos de línea LF en todo el proyecto (el servidor de Hostinger es Linux)
+* text=auto eol=lf
+
+# Archivos binarios
+*.png binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.wasm binary

@@ -1,0 +1,58 @@
+import { CloudUpload, Image, MapPin } from 'lucide-react'
+import { Link } from 'react-router'
+import type { MonitorRow } from '../lib/monitorView'
+import { StatusBadge } from './ui/StatusBadge'
+
+/**
+ * Tarjeta de un monitor en listas y resultados de búsqueda.
+ */
+export function MonitorCard({ row, showHospital = false }: { row: MonitorRow; showHospital?: boolean }) {
+  const { monitor } = row
+
+  return (
+    <Link
+      to={`/hospitals/${monitor.hospital_id}/monitors/${monitor.uuid}`}
+      className="block rounded-xl bg-white p-3.5 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md hover:ring-teal-300"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="truncate font-medium text-slate-900">{row.modelLabel}</div>
+          <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-500">
+            <span>
+              Serie: <strong className="font-medium text-slate-700">{monitor.serial_number ?? '—'}</strong>
+            </span>
+            <span>
+              NNI: <strong className="font-medium text-slate-700">{monitor.inventory_number ?? '—'}</strong>
+            </span>
+          </div>
+        </div>
+        <StatusBadge status={monitor.status} />
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+        {showHospital && <span className="font-medium text-slate-700">{row.hospitalName}</span>}
+        <span>{row.serviceName}</span>
+        {monitor.location && (
+          <span className="inline-flex items-center gap-0.5">
+            <MapPin className="size-3" />
+            {monitor.location}
+          </span>
+        )}
+        {row.missingCount > 0 && <span className="text-rose-700">{row.missingCount} falta{row.missingCount === 1 ? '' : 'n'}</span>}
+        {row.faultyCount > 0 && <span className="text-amber-700">{row.faultyCount} no funciona{row.faultyCount === 1 ? '' : 'n'}</span>}
+        {monitor.photos.length > 0 && (
+          <span className="inline-flex items-center gap-0.5">
+            <Image className="size-3" />
+            {monitor.photos.length}
+          </span>
+        )}
+        {monitor.pending && (
+          <span className="inline-flex items-center gap-0.5 text-amber-700" title="Pendiente de sincronizar">
+            <CloudUpload className="size-3" />
+            Pendiente
+          </span>
+        )}
+      </div>
+    </Link>
+  )
+}

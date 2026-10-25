@@ -1,0 +1,39 @@
+{
+    "name": "monitores/api",
+    "description": "API para inventario y diagnóstico de monitores de signos vitales",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.3",
+        "illuminate/database": "^13.38",
+        "illuminate/translation": "^13.38",
+        "illuminate/validation": "^13.38",
+        "php-di/php-di": "^7.1",
+        "robmorgan/phinx": "^0.16.12",
+        "slim/psr7": "^1.8",
+        "slim/slim": "^4.15",
+        "vlucas/phpdotenv": "^5.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "scripts": {
+        "serve": [
+            "Composer\\Config::disableProcessTimeout",
+            "php -S 127.0.0.1:8000 -t public public/index.php"
+        ],
+        "migrate": "phinx migrate",
+        "seed": "phinx seed:run -s CatalogSeeder"
+    },
+    "config": {
+        "platform": {
+            "php": "8.3.0"
+        },
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,0 +1,21 @@
+# Dependencias
+api/vendor/
+web/node_modules/
+
+# Configuración local y secretos
+api/.env
+
+# Archivos generados por la app
+api/storage/photos/*
+api/storage/logs/*
+!api/storage/photos/.gitkeep
+!api/storage/logs/.gitkeep
+
+# Compilados
+web/dist/
+web/dev-dist/
+deploy/out/
+
+# Sistema
+.DS_Store
+Thumbs.db
