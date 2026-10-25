@@ -28,7 +28,7 @@ export function PhotoPicker({ photos, onAdd, onRemove }: PhotoPickerProps) {
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
         {photos.map((photo) => (
           <div key={photo.uuid} className="relative aspect-square">
-            <button type="button" onClick={() => setViewing(photo)} className="block size-full overflow-hidden rounded-xl bg-slate-100">
+            <button type="button" onClick={() => setViewing(photo)} className="block size-full overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
               <PhotoImage photo={photo} className="size-full object-cover" />
             </button>
             <button
@@ -44,7 +44,7 @@ export function PhotoPicker({ photos, onAdd, onRemove }: PhotoPickerProps) {
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-slate-300 text-slate-500 hover:border-teal-500 hover:text-teal-700"
+          className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-slate-300 text-slate-500 hover:border-teal-500 hover:text-teal-700 dark:border-slate-700 dark:text-slate-400 dark:hover:text-teal-400"
         >
           <Camera className="size-6" />
           <span className="text-xs font-medium">Agregar</span>
@@ -77,7 +77,7 @@ export function PhotoImage({ photo, className }: { photo: PhotoItem; className?:
 
   if (failed || !src) {
     return (
-      <div className={`flex items-center justify-center bg-slate-100 text-slate-400 ${className}`} title="Foto no disponible sin conexión">
+      <div className={`flex items-center justify-center bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 ${className}`} title="Foto no disponible sin conexión">
         <ImageOff className="size-5" />
       </div>
     )

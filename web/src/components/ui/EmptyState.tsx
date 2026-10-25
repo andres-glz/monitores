@@ -10,12 +10,12 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-      <div className="mb-3 rounded-full bg-slate-100 p-3">
-        <Icon className="size-6 text-slate-500" />
+    <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900">
+      <div className="mb-3 rounded-full bg-slate-100 p-3 dark:bg-slate-800">
+        <Icon className="size-6 text-slate-500 dark:text-slate-400" />
       </div>
-      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-      {description && <p className="mt-1 max-w-sm text-sm text-slate-500">{description}</p>}
+      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
+      {description && <p className="mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">{description}</p>}
       {action && <div className="mt-5">{action}</div>}
     </div>
   )
@@ -23,8 +23,8 @@ export function EmptyState({ icon: Icon, title, description, action }: EmptyStat
 
 export function LoadingState({ message = 'Cargando…' }: { message?: string }) {
   return (
-    <div className="flex items-center justify-center gap-3 py-16 text-sm text-slate-500">
-      <span className="size-5 animate-spin rounded-full border-2 border-slate-300 border-t-teal-600" />
+    <div className="flex items-center justify-center gap-3 py-16 text-sm text-slate-500 dark:text-slate-400">
+      <span className="size-5 animate-spin rounded-full border-2 border-slate-300 border-t-teal-600 dark:border-slate-700" />
       {message}
     </div>
   )

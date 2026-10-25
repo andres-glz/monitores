@@ -80,7 +80,7 @@ export function ConsumablesPage() {
         }
       />
 
-      <div className="mb-5 flex gap-3 rounded-xl bg-teal-50 p-4 text-sm text-teal-900">
+      <div className="mb-5 flex gap-3 rounded-xl bg-teal-50 p-4 text-sm text-teal-900 dark:bg-teal-500/10 dark:text-teal-200">
         <Info className="mt-0.5 size-4 shrink-0" />
         <p>
           Agrupa los consumibles del mismo parámetro. Por ejemplo, en <strong>PANI</strong> puedes tener “Manguera” y
@@ -93,11 +93,11 @@ export function ConsumablesPage() {
       ) : (
         <div className="space-y-4">
           {sections.map(({ group, items }) => (
-            <section key={group?.id ?? 'ungrouped'} className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-              <header className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-2.5">
+            <section key={group?.id ?? 'ungrouped'} className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
+              <header className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-2.5 dark:border-slate-800 dark:bg-slate-800/30">
                 <div className="min-w-0 flex-1">
-                  <h2 className="font-semibold text-slate-900">{group?.name ?? UNGROUPED_NAME}</h2>
-                  <p className="text-xs text-slate-500">
+                  <h2 className="font-semibold text-slate-900 dark:text-slate-100">{group?.name ?? UNGROUPED_NAME}</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {group?.description ? `${group.description} · ` : ''}
                     {plural(items.length, 'consumible', 'consumibles')}
                   </p>
@@ -113,14 +113,14 @@ export function ConsumablesPage() {
                 )}
               </header>
               {items.length === 0 ? (
-                <p className="px-4 py-4 text-sm text-slate-500">Aún no hay consumibles en este grupo.</p>
+                <p className="px-4 py-4 text-sm text-slate-500 dark:text-slate-400">Aún no hay consumibles en este grupo.</p>
               ) : (
-                <ul className="divide-y divide-slate-100">
+                <ul className="divide-y divide-slate-100 dark:divide-slate-800">
                   {items.map((item) => (
                     <li key={item.id} className="flex items-center gap-2 px-4 py-2.5">
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-slate-800">{item.name}</div>
-                        <div className="text-xs text-slate-500">
+                        <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{item.name}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
                           {item.description ? `${item.description} · ` : ''}
                           {plural(modelUsage.get(item.id) ?? 0, 'modelo', 'modelos')}
                         </div>

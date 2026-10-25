@@ -5,8 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Inventario y diagnóstico de monitores de signos vitales" />
     <title>Diagnóstico de Monitores</title>
+    <script>
+      // Aplica el tema guardado antes de pintar para evitar un destello claro (ver src/lib/theme.ts)
+      try {
+        var theme = localStorage.getItem('monitores:theme')
+        if (theme === 'dark' || (theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark')
+        }
+      } catch (e) {}
+    </script>
   </head>
-  <body class="bg-slate-50">
+  <body class="bg-slate-50 dark:bg-slate-950">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

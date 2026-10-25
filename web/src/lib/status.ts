@@ -22,22 +22,22 @@ export const STATUS_LABELS: Record<MonitorStatus, string> = {
 // Clases de Tailwind por dictamen
 export const STATUS_STYLES: Record<MonitorStatus, { badge: string; dot: string; soft: string; text: string }> = {
   complete: {
-    badge: 'bg-emerald-100 text-emerald-800 ring-emerald-600/20',
+    badge: 'bg-emerald-100 text-emerald-800 ring-emerald-600/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-400/30',
     dot: 'bg-emerald-500',
-    soft: 'bg-emerald-50',
-    text: 'text-emerald-700',
+    soft: 'bg-emerald-50 dark:bg-emerald-500/10',
+    text: 'text-emerald-700 dark:text-emerald-400',
   },
   functional_incomplete: {
-    badge: 'bg-amber-100 text-amber-800 ring-amber-600/20',
+    badge: 'bg-amber-100 text-amber-800 ring-amber-600/20 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-400/30',
     dot: 'bg-amber-500',
-    soft: 'bg-amber-50',
-    text: 'text-amber-700',
+    soft: 'bg-amber-50 dark:bg-amber-500/10',
+    text: 'text-amber-700 dark:text-amber-400',
   },
   non_functional: {
-    badge: 'bg-rose-100 text-rose-800 ring-rose-600/20',
+    badge: 'bg-rose-100 text-rose-800 ring-rose-600/20 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-400/30',
     dot: 'bg-rose-500',
-    soft: 'bg-rose-50',
-    text: 'text-rose-700',
+    soft: 'bg-rose-50 dark:bg-rose-500/10',
+    text: 'text-rose-700 dark:text-rose-400',
   },
 }
 

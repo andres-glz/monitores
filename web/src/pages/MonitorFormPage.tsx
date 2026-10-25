@@ -99,7 +99,7 @@ export function MonitorFormPage() {
   if (!hospital) {
     return (
       <div className="mx-auto max-w-md px-4 py-10">
-        <EmptyState icon={MonitorX} title="Hospital no encontrado" action={<Link to="/" className="text-sm font-medium text-teal-700">Ir al inicio</Link>} />
+        <EmptyState icon={MonitorX} title="Hospital no encontrado" action={<Link to="/" className="text-sm font-medium text-teal-700 dark:text-teal-400">Ir al inicio</Link>} />
       </div>
     )
   }
@@ -113,7 +113,7 @@ export function MonitorFormPage() {
             icon={MonitorX}
             title="Monitor no encontrado"
             description="Pudo haber sido eliminado."
-            action={<Link to={`/hospitals/${hospitalId}`} className="text-sm font-medium text-teal-700">Volver al hospital</Link>}
+            action={<Link to={`/hospitals/${hospitalId}`} className="text-sm font-medium text-teal-700 dark:text-teal-400">Volver al hospital</Link>}
           />
         </div>
       )
@@ -358,12 +358,12 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
 
   return (
     <div className="pb-40">
-      <header className="safe-top sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <header className="safe-top sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
         <div className="mx-auto flex h-14 max-w-3xl items-center gap-2 px-3">
           <IconButton icon={ArrowLeft} label="Regresar" onClick={leave} />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold text-slate-900">{isEdit ? 'Editar monitor' : 'Capturar monitor'}</div>
-            <div className="truncate text-xs text-slate-500">
+            <div className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{isEdit ? 'Editar monitor' : 'Capturar monitor'}</div>
+            <div className="truncate text-xs text-slate-500 dark:text-slate-400">
               {hospitalName} · {registeredCount} registrados
             </div>
           </div>
@@ -374,7 +374,7 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
 
       <div className="mx-auto max-w-3xl space-y-4 px-3 pt-4 sm:px-4">
         {lastSaved && (
-          <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800 ring-1 ring-emerald-200">
+          <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30">
             <CircleCheck className="size-4 shrink-0" />
             <span className="min-w-0 flex-1 truncate">Guardado: {lastSaved.label}</span>
             <Link to={`/hospitals/${hospitalId}/monitors/${lastSaved.uuid}`} className="shrink-0 font-semibold underline underline-offset-2">
@@ -423,7 +423,7 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
                   type="button"
                   onClick={() => changeModel(String(id))}
                   className={`rounded-full px-3 py-1.5 text-xs font-medium ring-1 ring-inset ${
-                    form.modelId === String(id) ? 'bg-teal-700 text-white ring-teal-700' : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50'
+                    form.modelId === String(id) ? 'bg-teal-700 text-white ring-teal-700 dark:ring-teal-500' : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-800/50'
                   }`}
                 >
                   {catalog.modelLabel(id)}
@@ -502,13 +502,13 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
           <div
             onClick={() => update({ isOperational: !form.isOperational })}
             className={`mb-5 flex w-full cursor-pointer items-center gap-3 rounded-xl p-4 text-left ring-1 transition-colors select-none ${
-              form.isOperational ? 'bg-emerald-50 ring-emerald-200' : 'bg-rose-50 ring-rose-300'
+              form.isOperational ? 'bg-emerald-50 ring-emerald-200 dark:bg-emerald-500/10 dark:ring-emerald-500/30' : 'bg-rose-50 ring-rose-300 dark:bg-rose-500/10 dark:ring-rose-500/40'
             }`}
           >
-            <Power className={`size-6 shrink-0 ${form.isOperational ? 'text-emerald-600' : 'text-rose-600'}`} />
+            <Power className={`size-6 shrink-0 ${form.isOperational ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`} />
             <div className="min-w-0 flex-1">
-              <div className="font-semibold text-slate-900">{form.isOperational ? 'El equipo funciona' : 'El equipo NO funciona'}</div>
-              <div className="text-xs text-slate-600">Enciende y opera correctamente (independiente de sus consumibles).</div>
+              <div className="font-semibold text-slate-900 dark:text-slate-100">{form.isOperational ? 'El equipo funciona' : 'El equipo NO funciona'}</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400">Enciende y opera correctamente (independiente de sus consumibles).</div>
             </div>
             <span onClick={(event) => event.stopPropagation()}>
               <Switch checked={form.isOperational} onChange={(isOperational) => update({ isOperational })} label="El equipo funciona" size="lg" tone="emerald" showLabel={false} />
@@ -523,7 +523,7 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
               onChange={(consumables) => update({ consumables })}
             />
           ) : (
-            <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Selecciona el modelo para ver sus consumibles.</p>
+            <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">Selecciona el modelo para ver sus consumibles.</p>
           )}
         </Card>
 
@@ -538,17 +538,17 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
             />
           </Field>
           <div className="mt-4">
-            <div className="mb-2 text-sm font-medium text-slate-700">Fotos</div>
+            <div className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">Fotos</div>
             <PhotoPicker photos={photoItems} onAdd={addPhotos} onRemove={removePhoto} />
           </div>
         </Card>
       </div>
 
-      <div className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur">
+      <div className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
         <div className="mx-auto flex max-w-3xl flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:px-4">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <StatusBadge status={status} size="md" />
-            <span className="truncate text-xs text-slate-500">
+            <span className="truncate text-xs text-slate-500 dark:text-slate-400">
               {missing > 0 && `${missing} falta${missing === 1 ? '' : 'n'}`}
               {missing > 0 && faulty > 0 && ' · '}
               {faulty > 0 && `${faulty} no funciona${faulty === 1 ? '' : 'n'}`}
@@ -587,8 +587,8 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5">
-      <h2 className="mb-4 text-base font-semibold text-slate-900">{title}</h2>
+    <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-5 dark:bg-slate-900 dark:ring-slate-800">
+      <h2 className="mb-4 text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
       {children}
     </section>
   )
@@ -598,7 +598,7 @@ function DuplicateHint({ label, duplicates, catalog }: { label: string; duplicat
   if (duplicates.length === 0) return null
   const first = duplicates[0]
   return (
-    <span className="flex items-start gap-1 text-amber-700">
+    <span className="flex items-start gap-1 text-amber-700 dark:text-amber-400">
       <TriangleAlert className="mt-px size-3.5 shrink-0" />
       <span>
         Ya existe un monitor con este {label} en {catalog.hospitalById.get(first.hospital_id)?.name ?? 'otro hospital'}.{' '}

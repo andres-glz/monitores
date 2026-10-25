@@ -19,7 +19,7 @@ export function ReloadPrompt() {
   if (!needRefresh) return null
 
   return (
-    <div className="fixed inset-x-4 bottom-20 z-50 mx-auto max-w-md rounded-xl bg-slate-900 p-4 text-white shadow-xl lg:bottom-6">
+    <div className="fixed inset-x-4 bottom-20 z-50 mx-auto max-w-md rounded-xl bg-slate-900 p-4 text-white shadow-xl lg:bottom-6 dark:ring-1 dark:ring-slate-700">
       <p className="text-sm">Hay una nueva versión de la aplicación.</p>
       <div className="mt-3 flex justify-end gap-2">
         <Button variant="ghost" size="sm" className="text-slate-300 hover:bg-slate-800" onClick={() => setNeedRefresh(false)}>

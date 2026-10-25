@@ -36,7 +36,7 @@ export function SearchPage() {
       <PageHeader title="Buscar monitores" subtitle="Por número de serie, número nacional de inventario, servicio, modelo o ubicación." />
 
       <div className="relative mb-5">
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-slate-400" />
+        <Search className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
         <TextInput
           type="search"
           value={query}
@@ -55,7 +55,7 @@ export function SearchPage() {
         <EmptyState icon={Search} title="Sin coincidencias" description="Revisa el número o intenta con menos caracteres." />
       ) : (
         <>
-          <p className="mb-3 text-sm text-slate-500">
+          <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">
             {plural(results.length, 'resultado', 'resultados')}
             {results.length > MAX_RESULTS && ` (se muestran los primeros ${MAX_RESULTS})`}
           </p>

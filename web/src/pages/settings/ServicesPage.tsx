@@ -55,19 +55,19 @@ export function ServicesPage() {
       />
 
       <div className="relative mb-4">
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
+        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
         <TextInput value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar servicio…" className="pl-9" />
       </div>
 
       {services.length === 0 ? (
         <EmptyState icon={Stethoscope} title="Sin servicios" description="Agrega servicios como Urgencias, Pediatría o Terapia intensiva." />
       ) : (
-        <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+        <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 dark:divide-slate-800 dark:bg-slate-900 dark:ring-slate-800">
           {services.map((service) => (
             <li key={service.id} className="flex items-center gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">
-                <div className="font-medium text-slate-900">{service.name}</div>
-                <div className="text-sm text-slate-500">
+                <div className="font-medium text-slate-900 dark:text-slate-100">{service.name}</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">
                   {service.description ? `${service.description} · ` : ''}
                   {plural(usage.get(service.id) ?? 0, 'monitor', 'monitores')}
                 </div>

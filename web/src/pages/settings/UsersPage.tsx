@@ -77,20 +77,20 @@ export function UsersPage() {
       ) : users === null ? (
         <LoadingState />
       ) : (
-        <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+        <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 dark:divide-slate-800 dark:bg-slate-900 dark:ring-slate-800">
           {users.map((user) => (
             <li key={user.id} className="flex items-center gap-3 px-4 py-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                 <UserRound className="size-5" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium text-slate-900">{user.name}</span>
-                  {user.id === currentUser?.id && <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs text-teal-800">Tú</span>}
-                  {!user.is_active && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">Inactivo</span>}
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{user.name}</span>
+                  {user.id === currentUser?.id && <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs text-teal-800 dark:bg-teal-500/10 dark:text-teal-300">Tú</span>}
+                  {!user.is_active && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-400">Inactivo</span>}
                 </div>
-                <div className="truncate text-sm text-slate-500">{user.email}</div>
-                <div className="text-xs text-slate-400">Último acceso: {formatDateTime(user.last_login_at)}</div>
+                <div className="truncate text-sm text-slate-500 dark:text-slate-400">{user.email}</div>
+                <div className="text-xs text-slate-400 dark:text-slate-500">Último acceso: {formatDateTime(user.last_login_at)}</div>
               </div>
               <IconButton icon={Pencil} label="Editar" onClick={() => setEditing(user)} />
               {user.id !== currentUser?.id && <IconButton icon={Trash2} label="Eliminar" onClick={() => remove(user)} />}

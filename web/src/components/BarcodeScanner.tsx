@@ -131,7 +131,7 @@ export function BarcodeScanner({ open, title, onClose, onDetected }: BarcodeScan
               </div>
             )}
             {starting && !error && <p className="absolute text-sm text-white/80">Iniciando cámara…</p>}
-            {error && <p className="absolute mx-8 rounded-xl bg-white p-4 text-center text-sm text-slate-700">{error}</p>}
+            {error && <p className="absolute mx-8 rounded-xl bg-white p-4 text-center text-sm text-slate-700 dark:bg-slate-900 dark:text-slate-300">{error}</p>}
           </div>
 
           <div className="safe-bottom flex items-center justify-center gap-4 px-4 py-5">

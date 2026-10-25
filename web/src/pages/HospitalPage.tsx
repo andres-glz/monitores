@@ -43,7 +43,7 @@ export function HospitalPage() {
   if (!catalog) return null
   const hospital = catalog.hospitalById.get(hospitalId)
   if (!hospital) {
-    return <EmptyState icon={MonitorSmartphone} title="Hospital no encontrado" action={<Link to="/" className="text-sm font-medium text-teal-700">Ir al inicio</Link>} />
+    return <EmptyState icon={MonitorSmartphone} title="Hospital no encontrado" action={<Link to="/" className="text-sm font-medium text-teal-700 dark:text-teal-400">Ir al inicio</Link>} />
   }
   if (!monitors) return <LoadingState />
 
@@ -118,15 +118,15 @@ export function HospitalPage() {
         }
       />
 
-      <div className="mb-5 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <div className="mb-5 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <button
             type="button"
             onClick={() => setStatusFilter(null)}
-            className={`rounded-xl p-3 text-left transition ${statusFilter === null ? 'bg-slate-100 ring-2 ring-slate-300' : 'hover:bg-slate-50'}`}
+            className={`rounded-xl p-3 text-left transition ${statusFilter === null ? 'bg-slate-100 ring-2 ring-slate-300 dark:bg-slate-800 dark:ring-slate-700' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
           >
-            <div className="text-xs font-medium text-slate-500">Total de equipos</div>
-            <div className="mt-1 text-2xl font-semibold text-slate-900 tabular-nums">{monitors.length}</div>
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400">Total de equipos</div>
+            <div className="mt-1 text-2xl font-semibold text-slate-900 tabular-nums dark:text-slate-100">{monitors.length}</div>
           </button>
           {STATUS_ORDER.map((status) => (
             <button
@@ -134,16 +134,16 @@ export function HospitalPage() {
               type="button"
               onClick={() => setStatusFilter(statusFilter === status ? null : status)}
               className={`rounded-xl p-3 text-left transition ${
-                statusFilter === status ? `${STATUS_STYLES[status].soft} ring-2 ring-current ${STATUS_STYLES[status].text}` : 'hover:bg-slate-50'
+                statusFilter === status ? `${STATUS_STYLES[status].soft} ring-2 ring-current ${STATUS_STYLES[status].text}` : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
               }`}
             >
-              <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
                 <span className={`size-2 rounded-full ${STATUS_STYLES[status].dot}`} />
                 {STATUS_LABELS[status]}
               </div>
               <div className="mt-1 flex items-baseline gap-1.5">
-                <span className="text-2xl font-semibold text-slate-900 tabular-nums">{counts[status]}</span>
-                <span className="text-xs text-slate-500">{formatPercent(counts[status], monitors.length)}</span>
+                <span className="text-2xl font-semibold text-slate-900 tabular-nums dark:text-slate-100">{counts[status]}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{formatPercent(counts[status], monitors.length)}</span>
               </div>
             </button>
           ))}
@@ -161,7 +161,7 @@ export function HospitalPage() {
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
           <TextInput
             type="search"
             value={query}
@@ -181,7 +181,7 @@ export function HospitalPage() {
       </div>
 
       {hasFilters && (
-        <div className="mb-3 flex items-center justify-between text-sm text-slate-500">
+        <div className="mb-3 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
           <span>{plural(filtered.length, 'resultado', 'resultados')}</span>
           <button
             type="button"
@@ -190,7 +190,7 @@ export function HospitalPage() {
               setStatusFilter(null)
               setServiceFilter('')
             }}
-            className="inline-flex items-center gap-1 font-medium text-teal-700"
+            className="inline-flex items-center gap-1 font-medium text-teal-700 dark:text-teal-400"
           >
             <X className="size-4" />
             Limpiar filtros
@@ -215,9 +215,9 @@ export function HospitalPage() {
         <div className="space-y-6">
           {groups.map(({ serviceName, rows: serviceRows }) => (
             <section key={serviceName}>
-              <h2 className="mb-2 flex items-baseline gap-2 text-sm font-semibold text-slate-700">
+              <h2 className="mb-2 flex items-baseline gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
                 {serviceName}
-                <span className="text-xs font-normal text-slate-400">{serviceRows.length}</span>
+                <span className="text-xs font-normal text-slate-400 dark:text-slate-500">{serviceRows.length}</span>
               </h2>
               <div className="grid gap-2 md:grid-cols-2">
                 {serviceRows.map((row) => (

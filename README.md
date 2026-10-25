@@ -17,6 +17,7 @@ Aplicación web para hacer **inventario y diagnóstico** de los monitores de sig
 - **Reporte PDF** “Diagnóstico de monitores de signos vitales. *Hospital*”: indicadores y gráfica en la primera página, detalle por equipo con consumibles funcionales / no funcionales / faltantes, y al final estadísticas (faltantes y fallas por tipo, estado por grupo, necesidades de reposición, fallas más frecuentes, equipos por modelo y equipos no funcionales).
 - **Excel** con hojas: Resumen, Monitores, Consumibles, Reposición y Por modelo.
 - **Usuarios con inicio de sesión** (todos con el mismo nivel de acceso); se registra quién capturó cada equipo.
+- **Modo oscuro**: claro, oscuro o igual que el dispositivo (*Configuración → Apariencia*, o el botón de sol / luna en la barra superior). Se recuerda en cada dispositivo.
 
 ### Regla del dictamen
 

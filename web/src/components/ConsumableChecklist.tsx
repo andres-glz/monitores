@@ -14,9 +14,9 @@ const QUICK_NOTES: Record<Exclude<ConsumableCondition, 'working'>, string[]> = {
 }
 
 const ROW_TONES: Record<ConsumableCondition, string> = {
-  working: 'bg-white ring-slate-200',
-  faulty: 'bg-amber-50 ring-amber-300',
-  missing: 'bg-rose-50 ring-rose-300',
+  working: 'bg-white ring-slate-200 dark:bg-slate-900 dark:ring-slate-800',
+  faulty: 'bg-amber-50 ring-amber-300 dark:bg-amber-500/10 dark:ring-amber-500/40',
+  missing: 'bg-rose-50 ring-rose-300 dark:bg-rose-500/10 dark:ring-rose-500/40',
 }
 
 interface ConsumableChecklistProps {
@@ -50,7 +50,7 @@ export function ConsumableChecklist({ catalog, items, modelConsumableIds, onChan
   }
 
   if (items.length === 0 && available.length === 0) {
-    return <p className="text-sm text-slate-500">Este modelo no tiene consumibles configurados.</p>
+    return <p className="text-sm text-slate-500 dark:text-slate-400">Este modelo no tiene consumibles configurados.</p>
   }
 
   return (
@@ -60,19 +60,19 @@ export function ConsumableChecklist({ catalog, items, modelConsumableIds, onChan
         return (
           <section key={section.groupId ?? 'general'}>
             <div className="mb-2 flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-slate-800">{section.groupName}</h3>
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">{section.groupName}</h3>
               <div className="flex gap-1.5">
                 <button
                   type="button"
                   onClick={() => setGroup(ids, false)}
-                  className="rounded-full px-2.5 py-1 text-xs font-medium text-rose-700 ring-1 ring-rose-200 hover:bg-rose-50"
+                  className="rounded-full px-2.5 py-1 text-xs font-medium text-rose-700 ring-1 ring-rose-200 hover:bg-rose-50 dark:text-rose-400 dark:ring-rose-500/30 dark:hover:bg-rose-500/10"
                 >
                   Falta todo
                 </button>
                 <button
                   type="button"
                   onClick={() => setGroup(ids, true)}
-                  className="rounded-full px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50"
+                  className="rounded-full px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:ring-emerald-500/30 dark:hover:bg-emerald-500/10"
                 >
                   Todo OK
                 </button>
@@ -96,11 +96,11 @@ export function ConsumableChecklist({ catalog, items, modelConsumableIds, onChan
 
       {available.length > 0 && (
         <div className="flex items-center gap-2">
-          <Plus className="size-4 shrink-0 text-slate-400" />
+          <Plus className="size-4 shrink-0 text-slate-400 dark:text-slate-500" />
           <Select
             value=""
             onChange={(event) => event.target.value && addExtra(Number(event.target.value))}
-            className="text-slate-600"
+            className="text-slate-600 dark:text-slate-400"
             aria-label="Agregar consumible extra"
           >
             <option value="">Agregar otro consumible…</option>
@@ -142,17 +142,17 @@ function ConsumableRow({ name, state, isExtra, onChange, onRemove }: ConsumableR
   return (
     <div className={`rounded-xl p-3 ring-1 transition-colors ${ROW_TONES[condition]}`}>
       <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-slate-900">
-          {condition === 'working' && <CircleCheck className="size-4 shrink-0 text-emerald-600" />}
+        <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-slate-900 dark:text-slate-100">
+          {condition === 'working' && <CircleCheck className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />}
           <span>{name}</span>
-          {isExtra && <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 uppercase">Extra</span>}
+          {isExtra && <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 uppercase dark:bg-slate-800 dark:text-slate-400">Extra</span>}
         </div>
         <div className="-my-1 -mr-1 flex shrink-0">
           {!showNotes && (
             <button
               type="button"
               onClick={() => setNotesOpen(true)}
-              className="rounded p-1.5 text-slate-400 hover:text-teal-700"
+              className="rounded p-1.5 text-slate-400 hover:text-teal-700 dark:text-slate-500 dark:hover:text-teal-400"
               aria-label="Agregar observación"
               title="Agregar observación"
             >
@@ -160,7 +160,7 @@ function ConsumableRow({ name, state, isExtra, onChange, onRemove }: ConsumableR
             </button>
           )}
           {isExtra && (
-            <button type="button" onClick={onRemove} className="rounded p-1.5 text-slate-400 hover:text-slate-600" aria-label="Quitar consumible">
+            <button type="button" onClick={onRemove} className="rounded p-1.5 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-400" aria-label="Quitar consumible">
               <X className="size-4" />
             </button>
           )}
@@ -190,7 +190,7 @@ function ConsumableRow({ name, state, isExtra, onChange, onRemove }: ConsumableR
             onChange={(event) => onChange({ notes: event.target.value || null })}
             placeholder="Observaciones (p. ej. falso contacto)"
             maxLength={255}
-            className="block h-10 w-full rounded-lg border-0 bg-white px-3 text-sm text-slate-900 ring-1 ring-slate-300 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-teal-600"
+            className="block h-10 w-full rounded-lg border-0 bg-white px-3 text-sm text-slate-900 ring-1 ring-slate-300 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-teal-600 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500 dark:focus:ring-teal-500"
           />
           {condition !== 'working' && (
             <div className="flex flex-wrap gap-1.5">
@@ -199,7 +199,7 @@ function ConsumableRow({ name, state, isExtra, onChange, onRemove }: ConsumableR
                   key={text}
                   type="button"
                   onClick={() => appendNote(text)}
-                  className="rounded-full bg-white px-2.5 py-1 text-xs text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50 active:bg-slate-100"
+                  className="rounded-full bg-white px-2.5 py-1 text-xs text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50 active:bg-slate-100 dark:bg-slate-900 dark:text-slate-400 dark:ring-slate-700 dark:hover:bg-slate-800/50 dark:active:bg-slate-800"
                 >
                   {text}
                 </button>

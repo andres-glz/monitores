@@ -25,16 +25,16 @@ export function Switch({ checked, onChange, label, disabled = false, size = 'md'
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className="group inline-flex min-h-10 items-center gap-2 rounded-lg py-1 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-40"
+      className="group inline-flex min-h-10 items-center gap-2 rounded-lg py-1 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-40 dark:focus-visible:outline-teal-500"
     >
       <span
-        className={`relative inline-flex shrink-0 items-center rounded-full p-0.5 transition-colors duration-150 ${track} ${checked ? onColor : 'bg-slate-300'}`}
+        className={`relative inline-flex shrink-0 items-center rounded-full p-0.5 transition-colors duration-150 ${track} ${checked ? onColor : 'bg-slate-300 dark:bg-slate-600'}`}
       >
         <span
           className={`inline-block rounded-full bg-white shadow ring-0 transition-transform duration-150 ${thumb} ${checked ? shift : 'translate-x-0'}`}
         />
       </span>
-      {showLabel && <span className="text-sm font-medium text-slate-700 select-none">{label}</span>}
+      {showLabel && <span className="text-sm font-medium text-slate-700 select-none dark:text-slate-300">{label}</span>}
     </button>
   )
 }

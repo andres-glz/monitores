@@ -68,27 +68,27 @@ export function ModelsPage() {
         }
       />
 
-      <section className="mb-6 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <section className="mb-6 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold text-slate-900">Marcas</h2>
+          <h2 className="font-semibold text-slate-900 dark:text-slate-100">Marcas</h2>
           <Button size="sm" variant="subtle" icon={Plus} onClick={() => setEditingBrand('new')}>
             Nueva marca
           </Button>
         </div>
         <div className="flex flex-wrap gap-2">
           {catalog.brands.map((brand) => (
-            <span key={brand.id} className="inline-flex items-center gap-1 rounded-full bg-slate-100 py-1 pr-1 pl-3 text-sm text-slate-700">
-              <Tag className="size-3.5 text-slate-400" />
+            <span key={brand.id} className="inline-flex items-center gap-1 rounded-full bg-slate-100 py-1 pr-1 pl-3 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              <Tag className="size-3.5 text-slate-400 dark:text-slate-500" />
               {brand.name}
-              <button type="button" onClick={() => setEditingBrand(brand)} className="rounded-full p-1 hover:bg-slate-200" aria-label={`Editar ${brand.name}`}>
+              <button type="button" onClick={() => setEditingBrand(brand)} className="rounded-full p-1 hover:bg-slate-200 dark:hover:bg-slate-700" aria-label={`Editar ${brand.name}`}>
                 <Pencil className="size-3.5" />
               </button>
-              <button type="button" onClick={() => removeBrand(brand)} className="rounded-full p-1 hover:bg-slate-200" aria-label={`Eliminar ${brand.name}`}>
+              <button type="button" onClick={() => removeBrand(brand)} className="rounded-full p-1 hover:bg-slate-200 dark:hover:bg-slate-700" aria-label={`Eliminar ${brand.name}`}>
                 <Trash2 className="size-3.5" />
               </button>
             </span>
           ))}
-          {catalog.brands.length === 0 && <p className="text-sm text-slate-500">Agrega al menos una marca para registrar modelos.</p>}
+          {catalog.brands.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">Agrega al menos una marca para registrar modelos.</p>}
         </div>
       </section>
 
@@ -98,7 +98,7 @@ export function ModelsPage() {
         <div className="space-y-6">
           {brandsWithModels.map(({ brand, models }) => (
             <section key={brand.id}>
-              <h2 className="mb-2 text-sm font-semibold tracking-wide text-slate-500 uppercase">{brand.name}</h2>
+              <h2 className="mb-2 text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400">{brand.name}</h2>
               <div className="grid gap-3 md:grid-cols-2">
                 {models.map((model) => (
                   <ModelCard
@@ -143,27 +143,27 @@ function ModelCard({
   const sections = groupConsumables(catalog, model.consumable_ids)
 
   return (
-    <article className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+    <article className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-slate-900">{model.name}</h3>
+          <h3 className="font-semibold text-slate-900 dark:text-slate-100">{model.name}</h3>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-full bg-teal-50 px-2 py-0.5 font-medium text-teal-800">{MOUNT_TYPE_LABELS[model.mount_type]}</span>
-            <span className="text-slate-500">{plural(monitorCount, 'monitor registrado', 'monitores registrados')}</span>
+            <span className="rounded-full bg-teal-50 px-2 py-0.5 font-medium text-teal-800 dark:bg-teal-500/10 dark:text-teal-300">{MOUNT_TYPE_LABELS[model.mount_type]}</span>
+            <span className="text-slate-500 dark:text-slate-400">{plural(monitorCount, 'monitor registrado', 'monitores registrados')}</span>
           </div>
         </div>
         <IconButton icon={Pencil} label="Editar" onClick={onEdit} />
         <IconButton icon={Trash2} label="Eliminar" onClick={onDelete} />
       </div>
-      {model.description && <p className="mt-2 text-sm text-slate-500">{model.description}</p>}
+      {model.description && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{model.description}</p>}
       <dl className="mt-3 space-y-1.5 text-sm">
         {sections.map((section) => (
           <div key={section.groupId ?? 'general'} className="flex gap-2">
-            <dt className="w-24 shrink-0 font-medium text-slate-700">{section.groupName}</dt>
-            <dd className="text-slate-600">{section.items.map((item) => item.name).join(' · ')}</dd>
+            <dt className="w-24 shrink-0 font-medium text-slate-700 dark:text-slate-300">{section.groupName}</dt>
+            <dd className="text-slate-600 dark:text-slate-400">{section.items.map((item) => item.name).join(' · ')}</dd>
           </div>
         ))}
-        {sections.length === 0 && <p className="text-slate-500">Sin consumibles configurados.</p>}
+        {sections.length === 0 && <p className="text-slate-500 dark:text-slate-400">Sin consumibles configurados.</p>}
       </dl>
     </article>
   )
@@ -307,7 +307,7 @@ function ModelFormModal({
                 type="button"
                 onClick={() => setMountType(type)}
                 className={`flex h-11 items-center justify-center gap-2 rounded-lg text-sm font-medium ring-1 ring-inset ${
-                  mountType === type ? 'bg-teal-700 text-white ring-teal-700' : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50'
+                  mountType === type ? 'bg-teal-700 text-white ring-teal-700 dark:ring-teal-500' : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-800/50'
                 }`}
               >
                 {mountType === type && <Check className="size-4" />}
@@ -324,8 +324,8 @@ function ModelFormModal({
         <div>
           <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
             <div>
-              <div className="text-sm font-medium text-slate-700">Consumibles del modelo</div>
-              <div className="text-xs text-slate-500">{plural(selected.size, 'seleccionado', 'seleccionados')}</div>
+              <div className="text-sm font-medium text-slate-700 dark:text-slate-300">Consumibles del modelo</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">{plural(selected.size, 'seleccionado', 'seleccionados')}</div>
             </div>
             {otherModels.length > 0 && (
               <Select className="max-w-60 text-sm" value="" onChange={(event) => copyFrom(event.target.value)} aria-label="Copiar consumibles de otro modelo">
@@ -338,19 +338,19 @@ function ModelFormModal({
               </Select>
             )}
           </div>
-          {fieldErrors.consumable_ids && <p className="mb-2 text-sm text-rose-600">{fieldErrors.consumable_ids}</p>}
+          {fieldErrors.consumable_ids && <p className="mb-2 text-sm text-rose-600 dark:text-rose-400">{fieldErrors.consumable_ids}</p>}
           <div className="space-y-3">
             {sections.map((section) => (
-              <fieldset key={section.groupId ?? 'general'} className="rounded-xl ring-1 ring-slate-200">
-                <legend className="ml-3 px-1 text-xs font-semibold text-slate-600">{section.groupName}</legend>
+              <fieldset key={section.groupId ?? 'general'} className="rounded-xl ring-1 ring-slate-200 dark:ring-slate-800">
+                <legend className="ml-3 px-1 text-xs font-semibold text-slate-600 dark:text-slate-400">{section.groupName}</legend>
                 <div className="grid gap-x-4 px-3 pb-2 sm:grid-cols-2">
                   {section.items.map((item) => (
-                    <label key={item.id} className="flex min-h-10 cursor-pointer items-center gap-3 rounded-lg px-1 text-sm text-slate-700">
+                    <label key={item.id} className="flex min-h-10 cursor-pointer items-center gap-3 rounded-lg px-1 text-sm text-slate-700 dark:text-slate-300">
                       <input
                         type="checkbox"
                         checked={selected.has(item.id)}
                         onChange={() => toggle(item.id)}
-                        className="size-5 rounded border-slate-300 text-teal-700 accent-teal-700"
+                        className="size-5 rounded border-slate-300 text-teal-700 accent-teal-700 dark:border-slate-700 dark:text-teal-400 dark:accent-teal-500"
                       />
                       {item.name}
                     </label>

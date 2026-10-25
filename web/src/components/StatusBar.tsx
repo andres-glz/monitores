@@ -14,7 +14,7 @@ export function StatusBar({ counts, className = 'h-2' }: { counts: StatusCounts;
   const total = STATUS_ORDER.reduce((sum, status) => sum + counts[status], 0)
 
   return (
-    <div className={`flex w-full overflow-hidden rounded-full bg-slate-100 ${className}`}>
+    <div className={`flex w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 ${className}`}>
       {total > 0 &&
         STATUS_ORDER.map(
           (status) =>

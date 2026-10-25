@@ -1,7 +1,7 @@
 import type { InputHTMLAttributes, ReactNode, Ref, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 
 const CONTROL =
-  'block w-full rounded-lg border-0 bg-white px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-teal-600 disabled:bg-slate-50 disabled:text-slate-500'
+  'block w-full rounded-lg border-0 bg-white px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-teal-600 disabled:bg-slate-50 disabled:text-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500 dark:focus:ring-teal-500 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-400'
 
 interface FieldProps {
   label: string
@@ -16,15 +16,15 @@ interface FieldProps {
 export function Field({ label, htmlFor, error, hint, required, children, className = '' }: FieldProps) {
   return (
     <div className={className}>
-      <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-medium text-slate-700">
+      <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
-        {required && <span className="text-rose-500"> *</span>}
+        {required && <span className="text-rose-500 dark:text-rose-400"> *</span>}
       </label>
       {children}
       {error ? (
-        <p className="mt-1.5 text-sm text-rose-600">{error}</p>
+        <p className="mt-1.5 text-sm text-rose-600 dark:text-rose-400">{error}</p>
       ) : (
-        hint && <div className="mt-1.5 text-xs text-slate-500">{hint}</div>
+        hint && <div className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{hint}</div>
       )}
     </div>
   )
