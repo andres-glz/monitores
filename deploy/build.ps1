@@ -1,4 +1,4 @@
-# Compila el frontend y arma el paquete para subir a Hostinger:
+﻿# Compila el frontend y arma el paquete para subir a Hostinger:
 #   deploy/out/public_html   -> contenido de public_html (app React + entrada de la API)
 #   deploy/out/monitores-api -> código de la API (fuera de public_html)
 #   deploy/out/release.tar.gz

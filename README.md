@@ -152,12 +152,13 @@ En el servidor quedará así:
    ```
 
 4. Vuelve a ejecutar `.\deploy\upload.ps1 ...` (ahora corre las migraciones).
-5. Por SSH, carga el catálogo base y crea tu usuario:
+5. Por SSH, carga el catálogo base y crea tu usuario. En Hostinger el `php` de la terminal puede ser más viejo que el del sitio, así que usa la ruta que `upload.ps1` mostró en la línea **“PHP para la terminal”** (por ejemplo `/opt/alt/php83/usr/bin/php`):
 
    ```bash
    cd ~/domains/monitores.tudominio.com/monitores-api
-   vendor/bin/phinx seed:run -s CatalogSeeder -s ExampleModelsSeeder
-   php bin/create-user.php "Tu nombre" tu@correo.com
+   PHP=/opt/alt/php83/usr/bin/php
+   $PHP vendor/bin/phinx seed:run -s CatalogSeeder -s ExampleModelsSeeder
+   $PHP bin/create-user.php "Tu nombre" tu@correo.com
    ```
 
    No ejecutes `DemoSeeder` en producción.
@@ -173,7 +174,8 @@ Se conservan `.env` y las fotos. Los usuarios verán el aviso “Hay una nueva v
 
 ### Si algo falla
 
-- **Versión de PHP en SSH**: revisa `php -v`. Si es menor a 8.3, usa la ruta completa, por ejemplo `/opt/alt/php83/usr/bin/php vendor/bin/phinx migrate`.
+- **PHP de la terminal más viejo que el del sitio** (por ejemplo `You are running 8.1`): `upload.ps1` busca solo un PHP 8.3+ en `/opt/alt` y muestra cuál usó; usa esa ruta en los comandos manuales. Si dice que no encontró ninguno, revisa las versiones con `ls /opt/alt | grep php`.
+- **Aviso de `/api/health` al terminar el despliegue**: en hPanel, revisa que el sitio use PHP 8.3 o mayor y que el SSL esté activo.
 - **Composer**: si `composer` no existe prueba `composer2`.
 - **Error 500**: revisa `monitores-api/storage/logs/app.log` (o pon temporalmente `APP_DEBUG=true`).
 - **La ruta del sitio es distinta** (por ejemplo, el subdominio está dentro de otro sitio): ajusta la ruta en `deploy/upload.ps1` y en `public_html/api/index.php`.
