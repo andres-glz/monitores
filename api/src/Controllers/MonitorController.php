@@ -41,6 +41,8 @@ final class MonitorController
             'serial_number' => ['nullable', 'string', 'max:100'],
             'inventory_number' => ['nullable', 'string', 'max:100'],
             'location' => ['nullable', 'string', 'max:150'],
+            // Opcional para que una versión anterior de la app (en caché o con cambios en cola) siga funcionando
+            'is_found' => ['sometimes', 'boolean'],
             'is_operational' => ['required', 'boolean'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'consumables' => ['present', 'array'],

@@ -32,6 +32,8 @@ final class MonitorService
             $isOperational = (bool) $data['is_operational'];
 
             $monitor = Monitor::firstOrNew(['uuid' => $uuid]);
+            // Sin la llave (versión anterior de la app) se conserva el valor guardado; un alta nueva queda como encontrado
+            $isFound = array_key_exists('is_found', $data) ? (bool) $data['is_found'] : ($monitor->exists ? $monitor->is_found : true);
             $monitor->fill([
                 'hospital_id' => (int) $data['hospital_id'],
                 'service_id' => (int) $data['service_id'],
@@ -39,6 +41,7 @@ final class MonitorService
                 'serial_number' => $this->normalizeCode($data['serial_number'] ?? null),
                 'inventory_number' => $this->normalizeCode($data['inventory_number'] ?? null),
                 'location' => $data['location'] ?? null,
+                'is_found' => $isFound,
                 'is_operational' => $isOperational,
                 'status' => MonitorStatus::evaluate($isOperational, $consumables),
                 'notes' => $data['notes'] ?? null,

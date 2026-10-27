@@ -1,5 +1,5 @@
 import type { CatalogView } from '../hooks/useCatalog'
-import { MOUNT_TYPE_LABELS, consumableCondition } from './status'
+import { MOUNT_TYPE_LABELS, consumableCondition, isFound } from './status'
 import { searchable } from './format'
 import type { LocalMonitor, Monitor } from './types'
 
@@ -23,7 +23,8 @@ export function describeMonitor(monitor: LocalMonitor, catalog: CatalogView): Mo
   const serviceName = catalog.serviceById.get(monitor.service_id)?.name ?? 'Servicio eliminado'
   const hospitalName = catalog.hospitalById.get(monitor.hospital_id)?.name ?? ''
   const modelLabel = catalog.modelLabel(monitor.monitor_model_id)
-  const { missing, faulty } = countConditions(monitor)
+  // El diagnóstico de un monitor no encontrado no se toma en cuenta
+  const { missing, faulty } = isFound(monitor) ? countConditions(monitor) : { missing: 0, faulty: 0 }
 
   return {
     monitor,

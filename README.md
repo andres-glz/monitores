@@ -12,10 +12,16 @@ Aplicación web para hacer **inventario y diagnóstico** de los monitores de sig
   - Lectura de número de serie / inventario con la **cámara** (código de barras o QR).
   - **Fotos** de evidencia (se reducen automáticamente).
   - Ubicación (cama/cubículo) con sugerencias, aviso de **duplicados** por serie o NNI y atajo `Ctrl + Enter` para guardar.
+- **Monitores no encontrados**: la marca “No encontrado” indica que hay registro del monitor pero no se localizó físicamente. Sirve para dar de alta primero la lista de monitores a diagnosticar y quitarles la marca al encontrarlos.
+  - Al marcarla se sugiere el servicio “No especificado” (se puede cambiar); al quitarla se regresa el servicio anterior o se pide elegirlo.
+  - Con “Guardar y siguiente” la marca se conserva para registrar la lista de corrido.
+  - Si al capturar se escribe o escanea la serie o el NNI de un monitor marcado como no encontrado en el mismo hospital, un aviso permite abrir ese registro para diagnosticarlo en lugar de crear otro.
+  - En listas y tabla se muestra la etiqueta “No encontrado” en lugar del dictamen, y no cuentan en los dictámenes ni en los reportes de diagnóstico (el PDF y el Excel solo indican cuántos son).
 - **Dictamen automático**: Completo, Funcional incompleto o No funcional.
 - **Funciona sin conexión** (PWA): todo se guarda en el dispositivo y se sincroniza solo al volver la señal.
 - **Búsqueda por coincidencia** (serie, NNI, servicio, modelo, ubicación) en un hospital o en todos.
 - **Lista del hospital en tarjetas o en tabla**:
+  - Selector de localización: Encontrados (al abrir), No encontrados o Todos. Las estadísticas, los filtros y la búsqueda trabajan sobre lo elegido; con “No encontrados” las estadísticas son total, marcas, modelos y porcentaje del registro, el PDF y el Excel de diagnóstico se deshabilitan y aparecen un **PDF** y un **Excel de no encontrados** (listado con conteo por marca y modelo).
   - Filtros por dictamen, marca, modelo (en cascada: solo los modelos de la marca elegida) y servicio, más la búsqueda, que también acepta la serie o el NNI leídos con la **cámara**.
   - En la tabla se eligen las columnas que se muestran (si son muchas, la tabla se desliza hacia los lados), se ordena tocando el encabezado y cada renglón abre el detalle del monitor.
   - Los filtros quedan en la dirección de la página, así que se conservan al abrir un monitor y regresar. La vista y las columnas elegidas se recuerdan en cada dispositivo.
@@ -81,7 +87,7 @@ monitores/
 | `brands`, `monitor_models` | Marcas y modelos (`mount_type`: `portable` / `mounted`) |
 | `consumable_groups`, `consumables` | Grupos (SpO2, PANI…) y sus consumibles |
 | `monitor_model_consumables` | Consumibles que lleva cada modelo |
-| `monitors` | Equipo registrado: hospital, servicio, modelo, serie, NNI, ubicación, si funciona, dictamen, observaciones |
+| `monitors` | Equipo registrado: hospital, servicio, modelo, serie, NNI, ubicación, si se encontró (`is_found`), si funciona, dictamen, observaciones |
 | `monitor_consumables` | Por equipo y consumible: lo tiene, funciona, desgaste, observaciones |
 | `monitor_photos` | Fotos de evidencia (archivo en `storage/photos/`) |
 | `deleted_monitors` | Registro de eliminaciones para sincronizar dispositivos |

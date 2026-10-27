@@ -83,6 +83,13 @@ Cualquier cambio a la regla va en los dos. En `lib/status.ts` también están lo
 - **Compatibilidad**: si el PUT no trae la llave `wear` (una versión anterior de la app en caché o con cambios en cola), `MonitorService` conserva el valor guardado mientras el consumible siga funcionando.
 - En el formulario el desgaste se conserva al apagar los interruptores y se descarta al guardar. “Todo OK” lo regresa a `optimal`. Moderado y avanzado abren las observaciones y forman la lista de reemplazo prioritario de los reportes (`wearAttention` en `buildReport.ts`).
 
+### Monitores no encontrados
+
+- `monitors.is_found = false`: hay registro del monitor, pero no se localizó físicamente. Conserva su formulario completo y su dictamen, pero **el dictamen no se toma en cuenta**: `isFound()` (`lib/status.ts`) lo saca de `countStatuses`, de `buildHospitalReport` (que solo reporta `notFoundCount`) y de los conteos de faltantes de `describeMonitor`; `MonitorBadge` muestra “No encontrado” en lugar del dictamen. Sus reportes propios salen de `reports/buildNotFoundReport.ts`.
+- **Compatibilidad**: igual que `wear`, si el PUT no trae `is_found`, `MonitorService` conserva el valor guardado (un alta nueva queda como encontrado). La versión 3 de Dexie pone `is_found = true` en lo local.
+- El servicio sugerido es “No especificado” (`Service::NOT_SPECIFIED`, creado por la migración `AddIsFoundToMonitors` y el `CatalogSeeder`). El frontend lo identifica **por nombre** (`NOT_SPECIFIED_SERVICE`); si alguien lo renombra, la marca deja de sugerirlo sin fallar.
+- En la lista del hospital el parámetro `found` (`no` o `all`; sin él, solo encontrados) define el universo de las estadísticas, de las opciones de los filtros y de la lista. Desde la captura, el aviso de duplicado navega al monitor con `state.markFound` para quitarle la marca.
+
 ### API (PHP 8.3, Slim 4)
 
 - `bootstrap.php` arma la app:
@@ -114,7 +121,7 @@ Cualquier cambio a la regla va en los dos. En `lib/status.ts` también están lo
   - El precache incluye `.wasm` y permite archivos de hasta 10 MB, porque los chunks de PDF, Excel y del lector son grandes.
   - `/api` está excluido de `navigateFallback`.
 - Las preferencias locales van en `localStorage` con el prefijo `monitores:` (`lib/storage.ts`, que usan `lib/capturePrefs.ts` y `lib/listPrefs.ts`; `lib/theme.ts` tiene su propia lectura porque `index.html` lee la misma clave).
-- **Lista del hospital** (`HospitalPage`): los filtros y el orden viven en la URL (`?q=&status=&brand=&model=&service=&sort=`, con `-` al inicio de `sort` para descendente). Para regresar con ellos, las tarjetas, la tabla y los enlaces de captura mandan `state.backTo` con la URL actual, y `MonitorFormPage` navega a ese `backTo` al salir, guardar o eliminar. La vista (tarjetas o tabla) y las columnas visibles son preferencias del dispositivo (`lib/listPrefs.ts`). Las columnas de la tabla se definen en `MONITOR_COLUMNS` (`components/MonitorTable.tsx`); una columna nueva va ahí con su `sortValue` y su `render`.
+- **Lista del hospital** (`HospitalPage`): los filtros y el orden viven en la URL (`?found=&q=&status=&brand=&model=&service=&sort=`, con `-` al inicio de `sort` para descendente). Para regresar con ellos, las tarjetas, la tabla y los enlaces de captura mandan `state.backTo` con la URL actual, y `MonitorFormPage` navega a ese `backTo` al salir, guardar o eliminar. La vista (tarjetas o tabla) y las columnas visibles son preferencias del dispositivo (`lib/listPrefs.ts`). Las columnas de la tabla se definen en `MONITOR_COLUMNS` (`components/MonitorTable.tsx`); una columna nueva va ahí con su `sortValue` y su `render`.
 
 ### Estilos y modo oscuro
 

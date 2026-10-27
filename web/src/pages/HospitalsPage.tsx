@@ -10,7 +10,7 @@ import { PageHeader } from '../components/ui/PageHeader'
 import { useCatalog } from '../hooks/useCatalog'
 import { useAllMonitors } from '../hooks/useMonitors'
 import { plural, searchable } from '../lib/format'
-import { STATUS_LABELS, STATUS_ORDER, STATUS_STYLES } from '../lib/status'
+import { NOT_FOUND_STYLES, STATUS_LABELS, STATUS_ORDER, STATUS_STYLES, isFound } from '../lib/status'
 import type { LocalMonitor } from '../lib/types'
 
 export function HospitalsPage() {
@@ -66,7 +66,9 @@ export function HospitalsPage() {
         <div className="grid gap-3 sm:grid-cols-2">
           {hospitals.map((hospital) => {
             const hospitalMonitors = monitorsByHospital.get(hospital.id) ?? []
+            // Los dictámenes son solo de los encontrados; los no encontrados se cuentan aparte
             const counts = countStatuses(hospitalMonitors)
+            const notFound = hospitalMonitors.filter((monitor) => !isFound(monitor)).length
             const pending = hospitalMonitors.filter((monitor) => monitor.pending).length
 
             return (
@@ -106,6 +108,12 @@ export function HospitalsPage() {
                           {STATUS_LABELS[status]} <strong className="tabular-nums">{counts[status]}</strong>
                         </span>
                       ))}
+                      {notFound > 0 && (
+                        <span className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400">
+                          <span className={`size-2 rounded-full ${NOT_FOUND_STYLES.dot}`} />
+                          No encontrados <strong className="tabular-nums">{notFound}</strong>
+                        </span>
+                      )}
                     </div>
                   </>
                 )}

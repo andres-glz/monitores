@@ -20,6 +20,7 @@ import type { MonitorStatus } from '../../lib/types'
 import {
   REPORT_TITLE,
   WEAR_KEYS,
+  notFoundNote,
   type ConditionTally,
   type HospitalReport,
   type NamedBreakdown,
@@ -43,7 +44,7 @@ Font.registerHyphenationCallback((word) => [word])
 
 // ------------------------------------------------------------ Paleta
 
-const C = {
+export const C = {
   ink: '#0f172a',
   text: '#334155',
   muted: '#64748b',
@@ -79,7 +80,7 @@ function wearLabel(key: WearKey, short = false): string {
   return short ? WEAR_SHORT_LABELS[key] : WEAR_LABELS[key]
 }
 
-const s = StyleSheet.create({
+export const s = StyleSheet.create({
   page: { fontFamily: 'Inter', fontSize: 9, color: C.text, paddingTop: 40, paddingBottom: 54, paddingHorizontal: 36, lineHeight: 1.35 },
   // Se posiciona con top (alto de A4 = 841.89 pt): en páginas que se dividen, bottom no se calcula por hoja
   footer: {
@@ -153,7 +154,7 @@ function RunningHeader({ report }: { report: HospitalReport }) {
   )
 }
 
-function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+export function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <View style={{ marginBottom: 8 }} minPresenceAhead={60}>
       <Text style={s.h2}>{title}</Text>
@@ -162,7 +163,7 @@ function SectionTitle({ title, subtitle }: { title: string; subtitle?: string })
   )
 }
 
-function Dot({ color, size = 6 }: { color: string; size?: number }) {
+export function Dot({ color, size = 6 }: { color: string; size?: number }) {
   return <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: color }} />
 }
 
@@ -180,7 +181,7 @@ function StackedBar({ segments, height = 6 }: { segments: { value: number; color
 }
 
 /** Barra simple proporcional a un máximo */
-function ValueBar({ value, max, color }: { value: number; max: number; color: string }) {
+export function ValueBar({ value, max, color }: { value: number; max: number; color: string }) {
   return (
     <View style={{ height: 5, borderRadius: 2.5, backgroundColor: C.line, flexGrow: 1 }}>
       <View style={{ width: `${max > 0 ? (value / max) * 100 : 0}%`, height: 5, borderRadius: 2.5, backgroundColor: color }} />
@@ -264,7 +265,7 @@ function StatusPill({ status }: { status: MonitorStatus }) {
   )
 }
 
-function Empty({ children }: { children: ReactNode }) {
+export function Empty({ children }: { children: ReactNode }) {
   return <Text style={{ ...s.caption, paddingVertical: 6 }}>{children}</Text>
 }
 
@@ -285,9 +286,12 @@ function SummaryPage({ report }: { report: HospitalReport }) {
         <Text style={{ ...s.h1, color: C.brand }}>{report.hospital.name}</Text>
       </View>
       {report.hospital.description && <Text style={{ ...s.caption, marginLeft: 15, marginBottom: 4 }}>{report.hospital.description}</Text>}
-      <Text style={{ ...s.caption, marginLeft: 15, marginBottom: 20 }}>
+      <Text style={{ ...s.caption, marginLeft: 15, marginBottom: report.notFoundCount > 0 ? 2 : 20 }}>
         Elaborado por {report.generatedBy || '—'} · {totals.total} equipos evaluados
       </Text>
+      {report.notFoundCount > 0 && (
+        <Text style={{ ...s.caption, marginLeft: 15, marginBottom: 20 }}>{notFoundNote(report.notFoundCount)}</Text>
+      )}
 
       {/* Indicadores principales */}
       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>

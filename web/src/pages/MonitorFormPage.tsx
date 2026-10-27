@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowLeft, Check, CircleCheck, MonitorX, Plus, Power, Save, ScanBarcode, Trash2, TriangleAlert, X } from 'lucide-react'
+import { ArrowLeft, Check, CircleCheck, Info, MonitorX, Plus, Power, Save, ScanBarcode, SearchX, Stethoscope, Trash2, TriangleAlert, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
@@ -12,7 +12,7 @@ import { Button, IconButton } from '../components/ui/Button'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import { EmptyState, LoadingState } from '../components/ui/EmptyState'
 import { Field, Select, TextArea, TextInput } from '../components/ui/Field'
-import { StatusBadge } from '../components/ui/StatusBadge'
+import { NotFoundBadge, StatusBadge } from '../components/ui/StatusBadge'
 import { Switch } from '../components/ui/Switch'
 import { useCatalog, type CatalogView } from '../hooks/useCatalog'
 import { useCatalogMutation } from '../hooks/useCatalogMutation'
@@ -22,8 +22,8 @@ import { loadCapturePrefs, loadRecentModels, pushRecentModel, saveCapturePrefs }
 import { defaultConsumableState, groupConsumables } from '../lib/consumables'
 import { compressImage } from '../lib/image'
 import { countConditions } from '../lib/monitorView'
-import { emptyToNull, normalizeCode } from '../lib/format'
-import { MOUNT_TYPE_LABELS, evaluateStatus } from '../lib/status'
+import { emptyToNull, normalizeCode, searchable } from '../lib/format'
+import { MOUNT_TYPE_LABELS, NOT_FOUND_LABEL, NOT_SPECIFIED_SERVICE, evaluateStatus, isFound } from '../lib/status'
 import type { ConsumableState, LocalMonitor, MonitorInput, PhotoRef, Service } from '../lib/types'
 import { db } from '../offline/db'
 import { deleteMonitor, newUuid, saveMonitor } from '../offline/monitors'
@@ -34,6 +34,7 @@ interface FormState {
   serialNumber: string
   inventoryNumber: string
   location: string
+  isFound: boolean
   isOperational: boolean
   notes: string
   consumables: ConsumableState[]
@@ -67,19 +68,32 @@ function blankForm(catalog: CatalogView, hospitalId: number): FormState {
     serialNumber: '',
     inventoryNumber: '',
     location: '',
+    isFound: true,
     isOperational: true,
     notes: '',
     consumables: defaultConsumables(catalog, modelId),
   }
 }
 
-function formFromMonitor(monitor: LocalMonitor): FormState {
+/** Id del servicio que se sugiere para los monitores no encontrados (se identifica por nombre) */
+function notSpecifiedServiceId(catalog: CatalogView): string {
+  const service = catalog.services.find((item) => searchable(item.name) === searchable(NOT_SPECIFIED_SERVICE))
+  return service ? String(service.id) : ''
+}
+
+/**
+ * Formulario de un monitor guardado. Con markFound (desde el aviso de duplicado) se le quita la marca de no encontrado
+ * y, si tenía el servicio sugerido, se deja vacío para elegir el real.
+ */
+function formFromMonitor(catalog: CatalogView, monitor: LocalMonitor, markFound: boolean): FormState {
+  const serviceId = String(monitor.service_id)
   return {
-    serviceId: String(monitor.service_id),
+    serviceId: markFound && serviceId === notSpecifiedServiceId(catalog) ? '' : serviceId,
     modelId: String(monitor.monitor_model_id),
     serialNumber: monitor.serial_number ?? '',
     inventoryNumber: monitor.inventory_number ?? '',
     location: monitor.location ?? '',
+    isFound: markFound || isFound(monitor),
     isOperational: monitor.is_operational,
     notes: monitor.notes ?? '',
     consumables: monitor.consumables,
@@ -139,15 +153,20 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
   const confirm = useConfirm()
   const hospitalMonitors = useHospitalMonitors(hospitalId)
   // La lista del hospital manda su URL con filtros para regresar a ella tal como estaba
-  const backTo = (location.state as { backTo?: string } | null)?.backTo ?? `/hospitals/${hospitalId}`
+  const navigationState = location.state as { backTo?: string; markFound?: boolean } | null
+  const backTo = navigationState?.backTo ?? `/hospitals/${hospitalId}`
+  // Se abrió un monitor no encontrado desde el aviso de duplicado para diagnosticarlo
+  const [markedFound] = useState(() => Boolean(navigationState?.markFound && existing && !isFound(existing)))
 
   const [uuid, setUuid] = useState(() => existing?.uuid ?? newUuid())
-  const [form, setForm] = useState<FormState>(() => (existing ? formFromMonitor(existing) : blankForm(catalog, hospitalId)))
+  const [form, setForm] = useState<FormState>(() => (existing ? formFromMonitor(catalog, existing, markedFound) : blankForm(catalog, hospitalId)))
   const [keptPhotos, setKeptPhotos] = useState<PhotoRef[]>(() => existing?.photos ?? [])
   const [removedPhotos, setRemovedPhotos] = useState<string[]>([])
   const [addedPhotos, setAddedPhotos] = useState<AddedPhoto[]>([])
   const [errors, setErrors] = useState<{ service?: string; model?: string }>({})
-  const [dirty, setDirty] = useState(false)
+  const [dirty, setDirty] = useState(markedFound)
+  // Servicio que tenía antes de marcarlo como no encontrado, para regresarlo al quitar la marca
+  const [serviceBeforeNotFound, setServiceBeforeNotFound] = useState('')
   const [saving, setSaving] = useState(false)
   const [scanTarget, setScanTarget] = useState<ScanTarget | null>(null)
   const [lastSaved, setLastSaved] = useState<{ uuid: string; label: string } | null>(null)
@@ -187,6 +206,10 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
     [],
   )
 
+  // Al capturar un monitor que ya estaba registrado como no encontrado, se ofrece abrir ese registro
+  // (sustituye al aviso general de duplicado de ese monitor)
+  const notFoundMatch = !isEdit && form.isFound ? [...serialDuplicates, ...inventoryDuplicates].find((m) => m.hospital_id === hospitalId && !isFound(m)) : undefined
+
   // Ubicaciones ya usadas en el mismo servicio, como sugerencias
   const locationSuggestions = useMemo(() => {
     const values = (hospitalMonitors ?? [])
@@ -196,6 +219,21 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
   }, [hospitalMonitors, form.serviceId])
 
   // ------------------------------------------------------------ Acciones
+
+  // Marcar como no encontrado sugiere el servicio "No especificado"; al quitar la marca se regresa el anterior
+  const changeFound = (found: boolean) => {
+    const notSpecifiedId = notSpecifiedServiceId(catalog)
+    if (!found) {
+      setServiceBeforeNotFound(form.serviceId !== notSpecifiedId ? form.serviceId : '')
+      update({ isFound: false, serviceId: notSpecifiedId || form.serviceId })
+    } else {
+      update({ isFound: true, serviceId: form.serviceId === notSpecifiedId ? serviceBeforeNotFound : form.serviceId })
+    }
+    setErrors((current) => ({ ...current, service: undefined }))
+  }
+
+  const openNotFoundMatch = (monitor: LocalMonitor) =>
+    navigate(`/hospitals/${hospitalId}/monitors/${monitor.uuid}`, { state: { backTo, markFound: true } })
 
   const changeModel = (modelId: string) => {
     update({ modelId, consumables: defaultConsumables(catalog, modelId, form.consumables) })
@@ -266,6 +304,7 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
       serial_number: normalizeCode(form.serialNumber),
       inventory_number: normalizeCode(form.inventoryNumber),
       location: emptyToNull(form.location),
+      is_found: form.isFound,
       is_operational: form.isOperational,
       notes: emptyToNull(form.notes),
       consumables: form.consumables.map((item) => {
@@ -289,11 +328,14 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
     setSaving(false)
 
     navigator.vibrate?.(30)
-    saveCapturePrefs(hospitalId, { serviceId: input.service_id, modelId: input.monitor_model_id })
+    // El servicio sugerido de los no encontrados no se recuerda para la siguiente captura normal
+    saveCapturePrefs(hospitalId, { serviceId: input.is_found ? input.service_id : loadCapturePrefs(hospitalId).serviceId, modelId: input.monitor_model_id })
     pushRecentModel(input.monitor_model_id)
     setRecentModels(loadRecentModels())
 
-    const label = [catalog.modelLabel(input.monitor_model_id), input.serial_number ?? input.inventory_number].filter(Boolean).join(' · ')
+    const label = [catalog.modelLabel(input.monitor_model_id), input.serial_number ?? input.inventory_number, input.is_found ? null : NOT_FOUND_LABEL]
+      .filter(Boolean)
+      .join(' · ')
     if (mode === 'exit' || isEdit) {
       toast.success(isEdit ? 'Cambios guardados' : 'Monitor guardado', { description: label })
       navigate(backTo)
@@ -386,6 +428,32 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
           </div>
         )}
 
+        {markedFound && (
+          <div className="flex items-start gap-2 rounded-xl bg-teal-50 px-3 py-2 text-sm text-teal-800 ring-1 ring-teal-200 dark:bg-teal-500/10 dark:text-teal-300 dark:ring-teal-500/30">
+            <Info className="mt-0.5 size-4 shrink-0" />
+            <span>Se quitó la marca de “{NOT_FOUND_LABEL}”. Revisa el servicio, completa el diagnóstico y guarda los cambios.</span>
+          </div>
+        )}
+
+        {/* Toda la franja es clicable; el switch interno es el control accesible */}
+        <div
+          onClick={() => changeFound(!form.isFound)}
+          className={`flex cursor-pointer items-center gap-3 rounded-2xl p-4 shadow-sm ring-1 transition-colors select-none ${
+            form.isFound ? 'bg-white ring-slate-200 dark:bg-slate-900 dark:ring-slate-800' : 'bg-slate-100 ring-slate-300 dark:bg-slate-800 dark:ring-slate-700'
+          }`}
+        >
+          <SearchX className={`size-6 shrink-0 ${form.isFound ? 'text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'}`} />
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold text-slate-900 dark:text-slate-100">{NOT_FOUND_LABEL}</div>
+            <div className="text-xs text-slate-600 dark:text-slate-400">
+              Hay registro del monitor, pero no se localizó físicamente. No entra en el reporte de diagnóstico.
+            </div>
+          </div>
+          <span onClick={(event) => event.stopPropagation()}>
+            <Switch checked={!form.isFound} onChange={(notFound) => changeFound(!notFound)} label={NOT_FOUND_LABEL} showLabel={false} />
+          </span>
+        </div>
+
         <Card title="Equipo">
           <div className="grid gap-4 sm:grid-cols-2">
             <ServiceField
@@ -439,7 +507,7 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
             <Field
               label="Número de serie"
               htmlFor="serial"
-              hint={<DuplicateHint label="número de serie" duplicates={serialDuplicates} catalog={catalog} />}
+              hint={<DuplicateHint label="número de serie" duplicates={serialDuplicates.filter((m) => m.uuid !== notFoundMatch?.uuid)} catalog={catalog} />}
             >
               <div className="flex gap-2">
                 <TextInput
@@ -461,7 +529,7 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
             <Field
               label="No. nacional de inventario"
               htmlFor="inventory"
-              hint={<DuplicateHint label="número de inventario" duplicates={inventoryDuplicates} catalog={catalog} />}
+              hint={<DuplicateHint label="número de inventario" duplicates={inventoryDuplicates.filter((m) => m.uuid !== notFoundMatch?.uuid)} catalog={catalog} />}
             >
               <div className="flex gap-2">
                 <TextInput
@@ -480,6 +548,21 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
               </div>
             </Field>
           </div>
+
+          {notFoundMatch && (
+            <div className="mt-3 flex flex-col gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-800 ring-1 ring-amber-200 sm:flex-row sm:items-center dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/30">
+              <div className="flex min-w-0 flex-1 items-start gap-2">
+                <SearchX className="mt-0.5 size-4 shrink-0" />
+                <span>
+                  Este monitor ya está registrado en este hospital como <strong>{NOT_FOUND_LABEL}</strong>. Ábrelo para diagnosticarlo en lugar de crear otro
+                  registro.
+                </span>
+              </div>
+              <Button size="sm" icon={Stethoscope} onClick={() => openNotFoundMatch(notFoundMatch)}>
+                Abrir y diagnosticar
+              </Button>
+            </div>
+          )}
 
           <Field label="Ubicación" htmlFor="location" className="mt-4" hint="Cama, cubículo o piso dentro del servicio.">
             <TextInput
@@ -550,8 +633,8 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
       <div className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
         <div className="mx-auto flex max-w-3xl flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:px-4">
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <StatusBadge status={status} size="md" />
-            <span className="truncate text-xs text-slate-500 dark:text-slate-400">
+            {form.isFound ? <StatusBadge status={status} size="md" /> : <NotFoundBadge size="md" />}
+            <span className={`truncate text-xs text-slate-500 dark:text-slate-400 ${form.isFound ? '' : 'hidden'}`}>
               {missing > 0 && `${missing} falta${missing === 1 ? '' : 'n'}`}
               {missing > 0 && faulty > 0 && ' · '}
               {faulty > 0 && `${faulty} no funciona${faulty === 1 ? '' : 'n'}`}

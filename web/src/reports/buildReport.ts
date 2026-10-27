@@ -1,6 +1,6 @@
 import type { CatalogView } from '../hooks/useCatalog'
 import { groupConsumables } from '../lib/consumables'
-import { MOUNT_TYPE_LABELS, WEAR_LEVELS, consumableCondition, needsAttention, type ConsumableCondition } from '../lib/status'
+import { MOUNT_TYPE_LABELS, WEAR_LEVELS, consumableCondition, isFound, needsAttention, type ConsumableCondition } from '../lib/status'
 import type { ConsumableWear, Hospital, LocalMonitor, MonitorStatus } from '../lib/types'
 
 /**
@@ -9,6 +9,7 @@ import type { ConsumableWear, Hospital, LocalMonitor, MonitorStatus } from '../l
 
 export interface ReportOptions {
   hospital: Hospital
+  // Todos los del hospital: cada reporte toma los que le corresponden (encontrados o no encontrados)
   monitors: LocalMonitor[]
   catalog: CatalogView
   generatedBy: string
@@ -103,6 +104,8 @@ export interface HospitalReport {
   generatedAt: Date
   generatedBy: string
   totals: StatusBreakdown
+  // Monitores registrados que no se encontraron (no forman parte del reporte)
+  notFoundCount: number
   byService: NamedBreakdown[]
   byModel: NamedBreakdown[]
   byMountType: NamedBreakdown[]
@@ -123,6 +126,13 @@ export interface HospitalReport {
 
 export const REPORT_TITLE = 'Diagnóstico de monitores de signos vitales'
 
+/** Aclaración del reporte de diagnóstico cuando hay monitores registrados que no se encontraron */
+export function notFoundNote(count: number): string {
+  return count === 1
+    ? 'Además, 1 monitor registrado no se encontró físicamente y no se incluye en este reporte.'
+    : `Además, ${count} monitores registrados no se encontraron físicamente y no se incluyen en este reporte.`
+}
+
 function emptyBreakdown(name: string, detail?: string): NamedBreakdown {
   return { name, detail, total: 0, complete: 0, functional_incomplete: 0, non_functional: 0 }
 }
@@ -140,7 +150,9 @@ function sortBreakdown(items: NamedBreakdown[]): NamedBreakdown[] {
   return items.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'es'))
 }
 
-export function buildHospitalReport({ hospital, monitors, catalog, generatedBy }: ReportOptions): HospitalReport {
+export function buildHospitalReport({ hospital, monitors: allMonitors, catalog, generatedBy }: ReportOptions): HospitalReport {
+  // Los no encontrados quedan fuera del diagnóstico; solo se menciona cuántos son
+  const monitors = allMonitors.filter(isFound)
   const totals: StatusBreakdown = { total: 0, complete: 0, functional_incomplete: 0, non_functional: 0 }
   const byService = new Map<string, NamedBreakdown>()
   const byModel = new Map<string, NamedBreakdown>()
@@ -278,6 +290,7 @@ export function buildHospitalReport({ hospital, monitors, catalog, generatedBy }
     generatedAt: new Date(),
     generatedBy,
     totals,
+    notFoundCount: allMonitors.length - monitors.length,
     byService: [...byService.values()].sort((a, b) => a.name.localeCompare(b.name, 'es')),
     byModel: sortBreakdown([...byModel.values()]),
     byMountType: sortBreakdown([...byMountType.values()]),

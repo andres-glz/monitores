@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Monitor físico registrado en un hospital, con su diagnóstico.
+ * is_found = false: hay registro del monitor, pero no se localizó físicamente; no entra en el reporte de diagnóstico.
  */
 final class Monitor extends Model
 {
@@ -28,6 +29,7 @@ final class Monitor extends Model
         'serial_number',
         'inventory_number',
         'location',
+        'is_found',
         'is_operational',
         'status',
         'notes',
@@ -39,6 +41,7 @@ final class Monitor extends Model
             'hospital_id' => 'integer',
             'service_id' => 'integer',
             'monitor_model_id' => 'integer',
+            'is_found' => 'boolean',
             'is_operational' => 'boolean',
         ];
     }
@@ -81,6 +84,7 @@ final class Monitor extends Model
             'serial_number' => $this->serial_number,
             'inventory_number' => $this->inventory_number,
             'location' => $this->location,
+            'is_found' => $this->is_found,
             'is_operational' => $this->is_operational,
             'status' => $this->status,
             'notes' => $this->notes,

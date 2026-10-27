@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Service;
 use Phinx\Seed\AbstractSeed;
 
 /**
@@ -79,6 +80,8 @@ final class CatalogSeeder extends AbstractSeed
         foreach (self::SERVICES as $name) {
             $this->insertIfMissing('services', ['name' => $name]);
         }
+        // También lo crea la migración AddIsFoundToMonitors
+        $this->insertIfMissing('services', ['name' => Service::NOT_SPECIFIED], ['description' => Service::NOT_SPECIFIED_DESCRIPTION]);
 
         $groupOrder = 0;
         foreach (self::CONSUMABLES as $groupName => [$description, $items]) {

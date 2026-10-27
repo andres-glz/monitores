@@ -1,7 +1,7 @@
 import { CloudUpload, Image, MapPin } from 'lucide-react'
 import { Link } from 'react-router'
 import { monitorPath, type MonitorRow } from '../lib/monitorView'
-import { StatusBadge } from './ui/StatusBadge'
+import { MonitorBadge } from './ui/StatusBadge'
 
 interface MonitorCardProps {
   row: MonitorRow
@@ -34,7 +34,7 @@ export function MonitorCard({ row, showHospital = false, backTo }: MonitorCardPr
             </span>
           </div>
         </div>
-        <StatusBadge status={monitor.status} />
+        <MonitorBadge monitor={monitor} />
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">

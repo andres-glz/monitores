@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { Columns3, FileSpreadsheet, FileText, LayoutGrid, MonitorSmartphone, Pencil, Plus, ScanBarcode, Search, Table2, Trash2, X } from 'lucide-react'
+import { Columns3, FileSpreadsheet, FileText, LayoutGrid, MonitorSmartphone, Pencil, Plus, ScanBarcode, Search, SearchX, Table2, Trash2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
@@ -21,7 +21,8 @@ import { api } from '../lib/api'
 import { formatPercent, plural } from '../lib/format'
 import { loadTableColumns, loadViewMode, saveTableColumns, saveViewMode, type MonitorViewMode } from '../lib/listPrefs'
 import { compareByLocation, describeMonitor, matchesQuery, type MonitorRow } from '../lib/monitorView'
-import { STATUS_LABELS, STATUS_ORDER, STATUS_STYLES } from '../lib/status'
+import { NOT_FOUND_STYLES, STATUS_LABELS, STATUS_ORDER, STATUS_STYLES, isFound } from '../lib/status'
+import type { LocalMonitor } from '../lib/types'
 
 const VIEW_OPTIONS: { mode: MonitorViewMode; label: string; icon: LucideIcon }[] = [
   { mode: 'cards', label: 'Tarjetas', icon: LayoutGrid },
@@ -29,7 +30,22 @@ const VIEW_OPTIONS: { mode: MonitorViewMode; label: string; icon: LucideIcon }[]
 ]
 
 // Parámetros de la URL con los filtros; así se conservan al abrir un monitor y regresar
-const FILTER_PARAMS = ['q', 'status', 'brand', 'model', 'service'] as const
+const FILTER_PARAMS = ['found', 'q', 'status', 'brand', 'model', 'service'] as const
+
+// Localización: sin el parámetro "found" se ven solo los encontrados
+type FoundFilter = 'found' | 'not_found' | 'all'
+
+const FOUND_OPTIONS: { value: FoundFilter; param: string | null; label: string }[] = [
+  { value: 'found', param: null, label: 'Encontrados' },
+  { value: 'not_found', param: 'no', label: 'No encontrados' },
+  { value: 'all', param: 'all', label: 'Todos' },
+]
+
+function matchesFound(monitor: LocalMonitor, filter: FoundFilter): boolean {
+  return filter === 'all' || isFound(monitor) === (filter === 'found')
+}
+
+type ExportKind = 'pdf' | 'excel' | 'not_found_pdf' | 'not_found_excel'
 
 export function HospitalPage() {
   const params = useParams()
@@ -47,10 +63,12 @@ export function HospitalPage() {
   const [pickingColumns, setPickingColumns] = useState(false)
   const [scanning, setScanning] = useState(false)
   const [editing, setEditing] = useState(false)
-  const [exporting, setExporting] = useState<'pdf' | 'excel' | null>(null)
+  const [exporting, setExporting] = useState<ExportKind | null>(null)
 
   const query = searchParams.get('q') ?? ''
-  const statusFilter = STATUS_ORDER.find((status) => status === searchParams.get('status')) ?? null
+  const foundFilter = FOUND_OPTIONS.find((option) => option.param !== null && option.param === searchParams.get('found'))?.value ?? 'found'
+  // Los no encontrados no se filtran por dictamen
+  const statusFilter = foundFilter === 'not_found' ? null : (STATUS_ORDER.find((status) => status === searchParams.get('status')) ?? null)
   const brandFilter = searchParams.get('brand') ?? ''
   const modelFilter = searchParams.get('model') ?? ''
   const serviceFilter = searchParams.get('service') ?? ''
@@ -82,11 +100,16 @@ export function HospitalPage() {
   }
   if (!monitors) return <LoadingState />
 
-  const counts = countStatuses(monitors)
+  // Universo según la localización elegida: de ahí salen las estadísticas, las opciones de los filtros y la lista
+  const notFoundCount = monitors.filter((monitor) => !isFound(monitor)).length
+  const foundCount = monitors.length - notFoundCount
+  const scopedRows = rows.filter((row) => matchesFound(row.monitor, foundFilter))
+  const scopedMonitors = scopedRows.map((row) => row.monitor)
+  const counts = countStatuses(scopedMonitors)
   const brandOf = (modelId: number) => catalog.modelById.get(modelId)?.brand_id
-  const filtered = rows.filter(
+  const filtered = scopedRows.filter(
     (row) =>
-      (!statusFilter || row.monitor.status === statusFilter) &&
+      (!statusFilter || (isFound(row.monitor) && row.monitor.status === statusFilter)) &&
       (!brandFilter || String(brandOf(row.monitor.monitor_model_id)) === brandFilter) &&
       (!modelFilter || String(row.monitor.monitor_model_id) === modelFilter) &&
       (!serviceFilter || String(row.monitor.service_id) === serviceFilter) &&
@@ -95,8 +118,8 @@ export function HospitalPage() {
   const hasFilters = FILTER_PARAMS.some((key) => searchParams.has(key))
 
   // Las opciones de los filtros solo incluyen lo que hay en este hospital
-  const servicesInUse = catalog.services.filter((service) => rows.some((row) => row.monitor.service_id === service.id))
-  const modelsInUse = catalog.monitor_models.filter((model) => rows.some((row) => row.monitor.monitor_model_id === model.id))
+  const servicesInUse = catalog.services.filter((service) => scopedRows.some((row) => row.monitor.service_id === service.id))
+  const modelsInUse = catalog.monitor_models.filter((model) => scopedRows.some((row) => row.monitor.monitor_model_id === model.id))
   const brandsInUse = catalog.brands.filter((brand) => modelsInUse.some((model) => model.brand_id === brand.id))
   const modelOptions = modelsInUse
     .filter((model) => !brandFilter || String(model.brand_id) === brandFilter)
@@ -123,9 +146,11 @@ export function HospitalPage() {
       return next
     })
 
-  const exportReport = async (kind: 'pdf' | 'excel') => {
-    if (monitors.length === 0) {
-      toast.info('Aún no hay monitores registrados en este hospital.')
+  // Los reportes de diagnóstico dejan fuera a los no encontrados; ellos tienen su propio listado
+  const exportReport = async (kind: ExportKind) => {
+    const forNotFound = kind === 'not_found_pdf' || kind === 'not_found_excel'
+    if (forNotFound ? notFoundCount === 0 : foundCount === 0) {
+      toast.info(forNotFound ? 'No hay monitores marcados como no encontrados.' : 'Aún no hay monitores encontrados en este hospital.')
       return
     }
     setExporting(kind)
@@ -134,9 +159,15 @@ export function HospitalPage() {
       if (kind === 'pdf') {
         const { exportHospitalPdf } = await import('../reports/pdf/exportHospitalPdf')
         await exportHospitalPdf(options)
-      } else {
+      } else if (kind === 'excel') {
         const { exportHospitalExcel } = await import('../reports/excel/exportHospitalExcel')
         await exportHospitalExcel(options)
+      } else if (kind === 'not_found_pdf') {
+        const { exportNotFoundPdf } = await import('../reports/pdf/exportNotFoundPdf')
+        await exportNotFoundPdf(options)
+      } else {
+        const { exportNotFoundExcel } = await import('../reports/excel/exportNotFoundExcel')
+        await exportNotFoundExcel(options)
       }
     } catch (error) {
       console.error(error)
@@ -184,43 +215,97 @@ export function HospitalPage() {
       />
 
       <div className="mb-5 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <button
-            type="button"
-            onClick={() => updateParams({ status: null })}
-            className={`rounded-xl p-3 text-left transition ${statusFilter === null ? 'bg-slate-100 ring-2 ring-slate-300 dark:bg-slate-800 dark:ring-slate-700' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
-          >
-            <div className="text-xs font-medium text-slate-500 dark:text-slate-400">Total de equipos</div>
-            <div className="mt-1 text-2xl font-semibold text-slate-900 tabular-nums dark:text-slate-100">{monitors.length}</div>
-          </button>
-          {STATUS_ORDER.map((status) => (
-            <button
-              key={status}
-              type="button"
-              onClick={() => updateParams({ status: statusFilter === status ? null : status })}
-              className={`rounded-xl p-3 text-left transition ${
-                statusFilter === status ? `${STATUS_STYLES[status].soft} ring-2 ring-current ${STATUS_STYLES[status].text}` : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
-              }`}
-            >
-              <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
-                <span className={`size-2 rounded-full ${STATUS_STYLES[status].dot}`} />
-                {STATUS_LABELS[status]}
-              </div>
-              <div className="mt-1 flex items-baseline gap-1.5">
-                <span className="text-2xl font-semibold text-slate-900 tabular-nums dark:text-slate-100">{counts[status]}</span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">{formatPercent(counts[status], monitors.length)}</span>
-              </div>
-            </button>
-          ))}
+        <div role="group" aria-label="Localización" className="mb-4 grid grid-cols-3 rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
+          {FOUND_OPTIONS.map((option) => {
+            const active = foundFilter === option.value
+            const count = option.value === 'found' ? foundCount : option.value === 'not_found' ? notFoundCount : monitors.length
+            return (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={active}
+                onClick={() => updateParams({ found: option.param, ...(option.value === 'not_found' ? { status: null } : {}) })}
+                className={`inline-flex min-h-9 flex-wrap items-center justify-center gap-x-1.5 rounded-md px-2 py-1 text-sm font-medium transition-colors ${
+                  active
+                    ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100'
+                    : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                }`}
+              >
+                {option.label}
+                <span className="text-xs font-normal text-slate-500 tabular-nums dark:text-slate-400">{count}</span>
+              </button>
+            )
+          })}
         </div>
-        <StatusBar counts={counts} className="mt-4 h-2" />
+
+        {foundFilter === 'not_found' ? (
+          <NotFoundStats monitors={scopedMonitors} universe={monitors.length} brandOf={brandOf} />
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <button
+                type="button"
+                onClick={() => updateParams({ status: null })}
+                className={`rounded-xl p-3 text-left transition ${statusFilter === null ? 'bg-slate-100 ring-2 ring-slate-300 dark:bg-slate-800 dark:ring-slate-700' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
+              >
+                <div className="text-xs font-medium text-slate-500 dark:text-slate-400">Total de equipos</div>
+                <div className="mt-1 text-2xl font-semibold text-slate-900 tabular-nums dark:text-slate-100">{scopedMonitors.length}</div>
+              </button>
+              {STATUS_ORDER.map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => updateParams({ status: statusFilter === status ? null : status })}
+                  className={`rounded-xl p-3 text-left transition ${
+                    statusFilter === status ? `${STATUS_STYLES[status].soft} ring-2 ring-current ${STATUS_STYLES[status].text}` : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    <span className={`size-2 rounded-full ${STATUS_STYLES[status].dot}`} />
+                    {STATUS_LABELS[status]}
+                  </div>
+                  <div className="mt-1 flex items-baseline gap-1.5">
+                    <span className="text-2xl font-semibold text-slate-900 tabular-nums dark:text-slate-100">{counts[status]}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">{formatPercent(counts[status], scopedMonitors.length)}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <StatusBar counts={counts} notFound={foundFilter === 'all' ? notFoundCount : 0} className="mt-4 h-2" />
+            {foundFilter === 'all' && notFoundCount > 0 && (
+              <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                <span className={`size-2 rounded-full ${NOT_FOUND_STYLES.dot}`} />
+                No encontrados <strong className="tabular-nums">{notFoundCount}</strong>
+                <span>{formatPercent(notFoundCount, monitors.length)}</span>
+              </div>
+            )}
+          </>
+        )}
+
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button variant="secondary" icon={FileText} loading={exporting === 'pdf'} onClick={() => exportReport('pdf')}>
+          {/* Los reportes de diagnóstico no incluyen a los no encontrados */}
+          <Button variant="secondary" icon={FileText} loading={exporting === 'pdf'} disabled={foundFilter === 'not_found'} onClick={() => exportReport('pdf')}>
             Reporte PDF
           </Button>
-          <Button variant="secondary" icon={FileSpreadsheet} loading={exporting === 'excel'} onClick={() => exportReport('excel')}>
+          <Button
+            variant="secondary"
+            icon={FileSpreadsheet}
+            loading={exporting === 'excel'}
+            disabled={foundFilter === 'not_found'}
+            onClick={() => exportReport('excel')}
+          >
             Exportar Excel
           </Button>
+          {foundFilter === 'not_found' && (
+            <>
+              <Button variant="subtle" icon={FileText} loading={exporting === 'not_found_pdf'} onClick={() => exportReport('not_found_pdf')}>
+                PDF no encontrados
+              </Button>
+              <Button variant="subtle" icon={FileSpreadsheet} loading={exporting === 'not_found_excel'} onClick={() => exportReport('not_found_excel')}>
+                Excel no encontrados
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -317,6 +402,16 @@ export function HospitalPage() {
             </Link>
           }
         />
+      ) : scopedRows.length === 0 ? (
+        <EmptyState
+          icon={SearchX}
+          title={foundFilter === 'not_found' ? 'Sin monitores no encontrados' : 'Sin monitores encontrados'}
+          description={
+            foundFilter === 'not_found'
+              ? 'Ningún monitor de este hospital está marcado como no encontrado.'
+              : 'Todos los monitores registrados están marcados como no encontrados.'
+          }
+        />
       ) : filtered.length === 0 ? (
         <EmptyState icon={Search} title="Sin coincidencias" description="Prueba con otro número de serie, NNI, marca, modelo o servicio." />
       ) : viewMode === 'table' ? (
@@ -367,6 +462,32 @@ export function HospitalPage() {
         }}
       />
     </>
+  )
+}
+
+/** Estadísticas breves de los no encontrados (no tienen dictamen) */
+function NotFoundStats({ monitors, universe, brandOf }: { monitors: LocalMonitor[]; universe: number; brandOf: (modelId: number) => number | undefined }) {
+  const brands = new Set(monitors.map((monitor) => brandOf(monitor.monitor_model_id)))
+  const models = new Set(monitors.map((monitor) => monitor.monitor_model_id))
+  const stats = [
+    { label: 'Total no encontrados', value: String(monitors.length) },
+    { label: 'Marcas', value: String(brands.size) },
+    { label: 'Modelos', value: String(models.size) },
+    { label: 'Del total registrado', value: formatPercent(monitors.length, universe), detail: `de ${universe}` },
+  ]
+
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {stats.map((stat, index) => (
+        <div key={stat.label} className={`rounded-xl p-3 ${index === 0 ? 'bg-slate-100 ring-2 ring-slate-300 dark:bg-slate-800 dark:ring-slate-700' : ''}`}>
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{stat.label}</div>
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className="text-2xl font-semibold text-slate-900 tabular-nums dark:text-slate-100">{stat.value}</span>
+            {stat.detail && <span className="text-xs text-slate-500 dark:text-slate-400">{stat.detail}</span>}
+          </div>
+        </div>
+      ))}
+    </div>
   )
 }
 

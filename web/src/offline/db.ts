@@ -61,6 +61,16 @@ class AppDatabase extends Dexie {
           if (item.payload) item.payload.consumables = withDefaultWear(item.payload.consumables)
         })
     })
+    // v3: monitores no encontrados. Los ya capturados quedan como encontrados; la cola no se toca
+    // porque el servidor conserva el valor guardado si el PUT no trae is_found
+    this.version(3).upgrade(async (tx) => {
+      await tx
+        .table<LocalMonitor>('monitors')
+        .toCollection()
+        .modify((monitor) => {
+          monitor.is_found ??= true
+        })
+    })
   }
 }
 

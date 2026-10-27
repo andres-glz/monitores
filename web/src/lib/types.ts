@@ -88,6 +88,8 @@ export interface MonitorInput {
   serial_number: string | null
   inventory_number: string | null
   location: string | null
+  // false: hay registro del monitor, pero no se localizó físicamente (no entra en el reporte de diagnóstico)
+  is_found: boolean
   is_operational: boolean
   notes: string | null
   consumables: ConsumableState[]

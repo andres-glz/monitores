@@ -3,10 +3,10 @@ import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { formatDate } from '../lib/format'
 import { compareByLocation, monitorPath, type MonitorRow } from '../lib/monitorView'
-import { STATUS_ORDER } from '../lib/status'
+import { NOT_FOUND_LABEL, STATUS_ORDER, isFound } from '../lib/status'
 import { Button } from './ui/Button'
 import { Modal } from './ui/Modal'
-import { StatusBadge } from './ui/StatusBadge'
+import { MonitorBadge } from './ui/StatusBadge'
 import { Switch } from './ui/Switch'
 
 type SortValue = string | number | null
@@ -63,8 +63,16 @@ export const MONITOR_COLUMNS: MonitorColumn[] = [
     id: 'status',
     label: 'Dictamen',
     defaultVisible: true,
-    sortValue: (row) => STATUS_ORDER.indexOf(row.monitor.status),
-    render: (row) => <StatusBadge status={row.monitor.status} />,
+    // Los no encontrados van después de los dictámenes
+    sortValue: (row) => (isFound(row.monitor) ? STATUS_ORDER.indexOf(row.monitor.status) : STATUS_ORDER.length),
+    render: (row) => <MonitorBadge monitor={row.monitor} />,
+  },
+  {
+    id: 'found',
+    label: 'Localización',
+    defaultVisible: false,
+    sortValue: (row) => (isFound(row.monitor) ? 0 : 1),
+    render: (row) => (isFound(row.monitor) ? 'Encontrado' : NOT_FOUND_LABEL),
   },
   {
     id: 'missing',

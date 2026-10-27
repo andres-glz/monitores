@@ -48,6 +48,25 @@ export const STATUS_HEX: Record<MonitorStatus, string> = {
   non_functional: '#f43f5e',
 }
 
+// ------------------------------------------------------------ Monitores no encontrados
+
+/** Un monitor no encontrado tiene registro pero no se localizó; muestra esta etiqueta en lugar de su dictamen */
+export function isFound(monitor: { is_found?: boolean }): boolean {
+  return monitor.is_found !== false
+}
+
+export const NOT_FOUND_LABEL = 'No encontrado'
+
+export const NOT_FOUND_STYLES = {
+  badge: 'bg-slate-100 text-slate-700 ring-slate-500/20 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-400/30',
+  dot: 'bg-slate-400 dark:bg-slate-500',
+}
+
+export const NOT_FOUND_HEX = '#94a3b8'
+
+/** Nombre del servicio que se sugiere al marcar un monitor como no encontrado (Service::NOT_SPECIFIED en la API) */
+export const NOT_SPECIFIED_SERVICE = 'No especificado'
+
 export const MOUNT_TYPE_LABELS: Record<MountType, string> = {
   portable: 'Portátil',
   mounted: 'Empotrable',

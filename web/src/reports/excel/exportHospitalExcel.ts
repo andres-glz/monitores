@@ -3,10 +3,10 @@ import { downloadBlob, reportFileName } from '../../lib/download'
 import { formatDateTime, formatLongDate } from '../../lib/format'
 import { CONDITION_LABELS, STATUS_LABELS, STATUS_ORDER, UNRATED_WEAR_LABEL, WEAR_LABELS, WEAR_SHORT_LABELS, needsAttention } from '../../lib/status'
 import type { MonitorStatus } from '../../lib/types'
-import { WEAR_KEYS, buildHospitalReport, type HospitalReport, type NamedBreakdown, type ReportOptions, type WearKey } from '../buildReport'
+import { WEAR_KEYS, buildHospitalReport, notFoundNote, type HospitalReport, type NamedBreakdown, type ReportOptions, type WearKey } from '../buildReport'
 
 // Colores ARGB (Excel)
-const BRAND = 'FF0F766E'
+export const BRAND = 'FF0F766E'
 const HEADER_TEXT = 'FFFFFFFF'
 const BORDER = 'FFE2E8F0'
 const STATUS_FILL: Record<MonitorStatus, string> = {
@@ -61,7 +61,7 @@ function fill(argb: string): ExcelJS.Fill {
   return { type: 'pattern', pattern: 'solid', fgColor: { argb } }
 }
 
-function styleHeader(row: ExcelJS.Row): void {
+export function styleHeader(row: ExcelJS.Row): void {
   row.height = 22
   row.eachCell((cell) => {
     cell.fill = fill(BRAND)
@@ -70,7 +70,7 @@ function styleHeader(row: ExcelJS.Row): void {
   })
 }
 
-function styleBody(sheet: ExcelJS.Worksheet, fromRow: number): void {
+export function styleBody(sheet: ExcelJS.Worksheet, fromRow: number): void {
   for (let index = fromRow; index <= sheet.rowCount; index++) {
     sheet.getRow(index).eachCell((cell) => {
       cell.border = { bottom: { style: 'thin', color: { argb: BORDER } } }
@@ -80,7 +80,7 @@ function styleBody(sheet: ExcelJS.Worksheet, fromRow: number): void {
 }
 
 /** Hoja con tabla: encabezado con estilo, filtros y fila fija */
-function tableSheet(workbook: ExcelJS.Workbook, name: string, columns: Partial<ExcelJS.Column>[]): ExcelJS.Worksheet {
+export function tableSheet(workbook: ExcelJS.Workbook, name: string, columns: Partial<ExcelJS.Column>[]): ExcelJS.Worksheet {
   const sheet = workbook.addWorksheet(name, { views: [{ state: 'frozen', ySplit: 1 }] })
   sheet.columns = columns
   styleHeader(sheet.getRow(1))
@@ -92,7 +92,7 @@ function yesNo(value: boolean): string {
   return value ? 'Sí' : 'No'
 }
 
-function percent(part: number, total: number): number {
+export function percent(part: number, total: number): number {
   return total === 0 ? 0 : part / total
 }
 
@@ -108,9 +108,13 @@ function addSummarySheet(workbook: ExcelJS.Workbook, report: HospitalReport): vo
   sheet.getRow(1).height = 26
   sheet.getCell('A2').value = `Generado el ${formatLongDate(report.generatedAt)} por ${report.generatedBy || '—'}`
   sheet.getCell('A2').font = { italic: true, color: { argb: 'FF64748B' } }
+  if (report.notFoundCount > 0) {
+    sheet.getCell('A3').value = notFoundNote(report.notFoundCount)
+    sheet.getCell('A3').font = { italic: true, color: { argb: 'FF64748B' } }
+  }
 
   // Dictámenes
-  let row = 4
+  let row = 5
   const statusHeader = sheet.getRow(row)
   statusHeader.values = ['Dictamen', 'Equipos', '% del total']
   styleHeader(statusHeader)

@@ -13,7 +13,7 @@ export function downloadBlob(blob: Blob, fileName: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 30_000)
 }
 
-export function reportFileName(hospitalName: string, extension: 'pdf' | 'xlsx'): string {
+export function reportFileName(hospitalName: string, extension: 'pdf' | 'xlsx', prefix = 'diagnostico-monitores'): string {
   const date = new Date().toISOString().slice(0, 10)
-  return `diagnostico-monitores-${slugify(hospitalName)}-${date}.${extension}`
+  return `${prefix}-${slugify(hospitalName)}-${date}.${extension}`
 }
