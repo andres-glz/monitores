@@ -5,9 +5,28 @@ import inter500 from '@fontsource/inter/files/inter-latin-500-normal.woff?url'
 import inter600 from '@fontsource/inter/files/inter-latin-600-normal.woff?url'
 import inter700 from '@fontsource/inter/files/inter-latin-700-normal.woff?url'
 import { formatDateTime, formatLongDate, formatPercent } from '../../lib/format'
-import { CONDITION_LABELS, STATUS_LABELS, STATUS_ORDER, type ConsumableCondition } from '../../lib/status'
+import {
+  CONDITION_LABELS,
+  STATUS_LABELS,
+  STATUS_ORDER,
+  UNRATED_WEAR_HEX,
+  UNRATED_WEAR_LABEL,
+  WEAR_HEX,
+  WEAR_LABELS,
+  WEAR_SHORT_LABELS,
+  type ConsumableCondition,
+} from '../../lib/status'
 import type { MonitorStatus } from '../../lib/types'
-import { REPORT_TITLE, type ConditionTally, type HospitalReport, type NamedBreakdown, type ReportMonitor } from '../buildReport'
+import {
+  REPORT_TITLE,
+  WEAR_KEYS,
+  type ConditionTally,
+  type HospitalReport,
+  type NamedBreakdown,
+  type ReportMonitor,
+  type WearCounts,
+  type WearKey,
+} from '../buildReport'
 
 // Fuentes incluidas en la app para generar el PDF sin conexión
 Font.register({
@@ -45,6 +64,19 @@ const CONDITION_TONES: Record<ConsumableCondition, { main: string; soft: string;
   working: TONES.complete,
   faulty: TONES.functional_incomplete,
   missing: TONES.non_functional,
+}
+
+const WEAR_TONES: Record<WearKey, { main: string; text: string }> = {
+  optimal: { main: WEAR_HEX.optimal, text: '#047857' },
+  light: { main: WEAR_HEX.light, text: '#4d7c0f' },
+  moderate: { main: WEAR_HEX.moderate, text: '#b45309' },
+  advanced: { main: WEAR_HEX.advanced, text: '#c2410c' },
+  unrated: { main: UNRATED_WEAR_HEX, text: '#64748b' },
+}
+
+function wearLabel(key: WearKey, short = false): string {
+  if (key === 'unrated') return UNRATED_WEAR_LABEL
+  return short ? WEAR_SHORT_LABELS[key] : WEAR_LABELS[key]
 }
 
 const s = StyleSheet.create({
@@ -165,6 +197,15 @@ function conditionSegments(item: { working: number; faulty: number; missing: num
     value: item[condition],
     color: CONDITION_TONES[condition].main,
   }))
+}
+
+function wearSegments(item: WearCounts) {
+  return WEAR_KEYS.map((key) => ({ value: item[key], color: WEAR_TONES[key].main }))
+}
+
+/** Niveles de desgaste a mostrar ("Sin evaluar" solo si hay datos sin desgaste) */
+function visibleWearKeys(totals: WearCounts): WearKey[] {
+  return WEAR_KEYS.filter((key) => key !== 'unrated' || totals.unrated > 0)
 }
 
 /** Gráfica de dona con los dictámenes */
@@ -302,6 +343,23 @@ function SummaryPage({ report }: { report: HospitalReport }) {
           <Text style={{ ...s.caption, marginTop: 8 }}>
             {report.monitorsWithIssues} de {totals.total} equipos tienen al menos un consumible faltante o que no funciona.
           </Text>
+
+          {report.wearTotals.total > 0 && (
+            <View style={{ borderTopWidth: 0.5, borderTopColor: C.line, marginTop: 8, paddingTop: 8 }}>
+              <Text style={{ fontSize: 8, fontWeight: 600, color: C.ink, marginBottom: 5 }}>Desgaste de los {report.wearTotals.total} que funcionan</Text>
+              <StackedBar segments={wearSegments(report.wearTotals)} height={6} />
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 3, marginTop: 6 }}>
+                {visibleWearKeys(report.wearTotals).map((key) => (
+                  <View key={key} style={{ ...s.row, gap: 4 }}>
+                    <Dot color={WEAR_TONES[key].main} size={6} />
+                    <Text style={{ fontSize: 7.5 }}>
+                      {wearLabel(key, true)} <Text style={{ fontWeight: 600, color: C.ink }}>{report.wearTotals[key]}</Text>
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
         </View>
       </View>
 
@@ -318,7 +376,9 @@ function SummaryPage({ report }: { report: HospitalReport }) {
           <Text style={{ fontWeight: 600, color: TONES.functional_incomplete.text }}>Funcional incompleto: </Text>
           el equipo funciona, pero le falta o falla al menos un consumible.{'  '}
           <Text style={{ fontWeight: 600, color: TONES.non_functional.text }}>No funcional: </Text>
-          el equipo no enciende u opera de forma incorrecta.
+          el equipo no enciende u opera de forma incorrecta.{'  '}
+          <Text style={{ fontWeight: 600, color: C.ink }}>Desgaste: </Text>
+          se registra en los consumibles que funcionan y no cambia el dictamen.
         </Text>
       </View>
 
@@ -392,7 +452,10 @@ function DetailPages({ report }: { report: HospitalReport }) {
   return (
     <Page size="A4" style={s.page}>
       <RunningHeader report={report} />
-      <SectionTitle title="Detalle por equipo" subtitle="Consumibles revisados en cada monitor, agrupados por servicio." />
+      <SectionTitle
+        title="Detalle por equipo"
+        subtitle="Consumibles revisados en cada monitor, agrupados por servicio. Los que no tienen anotación funcionan y no presentan desgaste."
+      />
 
       {services.map((service) => (
         <View key={service.name}>
@@ -466,6 +529,8 @@ function MonitorCard({ monitor, index, total }: { monitor: ReportMonitor; index:
               <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', rowGap: 2 }}>
                 {section.items.map((item) => {
                   const tone = CONDITION_TONES[item.condition]
+                  // En los que funcionan se anota el desgaste salvo que sea óptimo
+                  const wearKey: WearKey | null = item.condition === 'working' && item.wear !== 'optimal' ? (item.wear ?? 'unrated') : null
                   return (
                     <View key={item.name} style={{ width: '50%', flexDirection: 'row', alignItems: 'flex-start', gap: 4, paddingRight: 6 }}>
                       <View style={{ paddingTop: 2.5 }}>
@@ -476,6 +541,7 @@ function MonitorCard({ monitor, index, total }: { monitor: ReportMonitor; index:
                         {item.condition !== 'working' && (
                           <Text style={{ color: tone.text, fontWeight: 600 }}> · {CONDITION_LABELS[item.condition]}</Text>
                         )}
+                        {wearKey && <Text style={{ color: WEAR_TONES[wearKey].text, fontWeight: 600 }}> · {wearLabel(wearKey)}</Text>}
                         {item.notes && <Text style={{ color: C.muted }}> ({item.notes})</Text>}
                       </Text>
                     </View>
@@ -588,6 +654,82 @@ function StatsPage({ report }: { report: HospitalReport }) {
               <Text style={{ width: 66, ...s.num, fontWeight: 600 }}>{replacementTotals.faulty}</Text>
               <Text style={{ width: 54, ...s.num, fontWeight: 700, color: C.brand }}>{replacementTotals.missing + replacementTotals.faulty}</Text>
             </View>
+          </View>
+        )}
+      </View>
+
+      {report.wearTotals.total > 0 && (
+        <View style={{ marginBottom: 18 }}>
+          <SectionTitle title="Desgaste de consumibles por tipo" subtitle="Nivel de desgaste de los consumibles que funcionan." />
+          <View style={{ ...s.row, flexWrap: 'wrap', columnGap: 12, rowGap: 3, marginBottom: 8 }}>
+            {visibleWearKeys(report.wearTotals).map((key) => (
+              <View key={key} style={{ ...s.row, gap: 4 }}>
+                <Dot color={WEAR_TONES[key].main} size={6} />
+                <Text style={{ fontSize: 7.5 }}>{wearLabel(key)}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={{ gap: 6 }}>
+            {report.wearByConsumable.map((item) => (
+              <View key={`${item.groupName}-${item.name}`} style={{ ...s.row, gap: 8 }} wrap={false}>
+                <View style={{ width: 150 }}>
+                  <Text style={{ fontSize: 8.5, color: C.ink }}>{item.name}</Text>
+                  <Text style={{ fontSize: 7, color: C.faint }}>{item.groupName}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <StackedBar segments={wearSegments(item)} height={7} />
+                </View>
+                <Text style={{ width: 170, fontSize: 7.5, color: C.muted, ...s.num }}>
+                  {visibleWearKeys(report.wearTotals)
+                    .filter((key) => item[key] > 0)
+                    .map((key, index) => (
+                      <Text key={key}>
+                        {index > 0 && ' · '}
+                        <Text style={{ color: WEAR_TONES[key].text }}>
+                          {item[key]} {wearLabel(key, true).toLowerCase()}
+                        </Text>
+                      </Text>
+                    ))}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      <View style={{ marginBottom: 18 }}>
+        <SectionTitle
+          title="Reemplazo prioritario y consumibles a vigilar"
+          subtitle="Consumibles que funcionan con desgaste avanzado (reemplazo prioritario) o moderado (a vigilar)."
+        />
+        {report.wearAttention.length === 0 ? (
+          <Empty>No se registraron consumibles con desgaste moderado o avanzado.</Empty>
+        ) : (
+          <View>
+            <View style={s.tableHeader} fixed>
+              <Text style={{ width: 62 }}>Desgaste</Text>
+              <Text style={{ width: 110 }}>Consumible</Text>
+              <Text style={{ width: 90 }}>Servicio</Text>
+              <Text style={{ width: 50 }}>Ubicación</Text>
+              <Text style={{ width: 66 }}>Serie</Text>
+              <Text style={{ flex: 1 }}>Observaciones</Text>
+            </View>
+            {report.wearAttention.map((item) => (
+              <View key={`${item.monitorUuid}-${item.consumable}`} style={s.tableRow} wrap={false}>
+                <View style={{ width: 62, ...s.row, gap: 4 }}>
+                  <Dot color={WEAR_TONES[item.wear].main} size={5} />
+                  <Text style={{ fontSize: 8, fontWeight: 600, color: WEAR_TONES[item.wear].text }}>{wearLabel(item.wear, true)}</Text>
+                </View>
+                <View style={{ width: 110, paddingRight: 4 }}>
+                  <Text style={{ color: C.ink }}>{item.consumable}</Text>
+                  <Text style={{ fontSize: 7, color: C.faint }}>{item.modelLabel}</Text>
+                </View>
+                <Text style={{ width: 90, paddingRight: 4 }}>{item.serviceName}</Text>
+                <Text style={{ width: 50 }}>{item.location ?? '—'}</Text>
+                <Text style={{ width: 66 }}>{item.serialNumber ?? 'S/N'}</Text>
+                <Text style={{ flex: 1, color: C.muted }}>{item.notes ?? '—'}</Text>
+              </View>
+            ))}
           </View>
         )}
       </View>

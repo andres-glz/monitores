@@ -1,5 +1,11 @@
 import { UNGROUPED_NAME, type CatalogView } from '../hooks/useCatalog'
-import type { Consumable } from './types'
+import { DEFAULT_WEAR } from './status'
+import type { Consumable, ConsumableState } from './types'
+
+/** Estado de un consumible recién agregado: lo tiene, funciona y sin desgaste (solo se marcan las excepciones) */
+export function defaultConsumableState(consumableId: number): ConsumableState {
+  return { consumable_id: consumableId, is_present: true, is_working: true, wear: DEFAULT_WEAR, notes: null }
+}
 
 export interface ConsumableSection {
   groupId: number | null

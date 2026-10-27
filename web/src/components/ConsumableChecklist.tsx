@@ -1,16 +1,19 @@
 import { CircleCheck, MessageSquareText, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import type { CatalogView } from '../hooks/useCatalog'
-import { groupConsumables } from '../lib/consumables'
-import { consumableCondition, type ConsumableCondition } from '../lib/status'
-import type { ConsumableState } from '../lib/types'
+import { defaultConsumableState, groupConsumables } from '../lib/consumables'
+import { DEFAULT_WEAR, UNRATED_WEAR_LABEL, WEAR_DOT_STYLES, WEAR_LABELS, WEAR_LEVELS, consumableCondition, needsAttention, type ConsumableCondition } from '../lib/status'
+import type { ConsumableState, ConsumableWear } from '../lib/types'
 import { Select } from './ui/Field'
 import { Switch } from './ui/Switch'
 
-// Frases rápidas para no escribir lo mismo una y otra vez
-const QUICK_NOTES: Record<Exclude<ConsumableCondition, 'working'>, string[]> = {
+// Frases rápidas para no escribir lo mismo una y otra vez ('worn': funciona con desgaste moderado o avanzado)
+type NoteTopic = Exclude<ConsumableCondition, 'working'> | 'worn'
+
+const QUICK_NOTES: Record<NoteTopic, string[]> = {
   faulty: ['Falso contacto', 'Cable dañado', 'Conector roto', 'No da lectura', 'Desgastado'],
   missing: ['Extraviado', 'En reparación', 'Prestado a otro servicio'],
+  worn: ['Cable con grietas', 'Clip flojo', 'Recubrimiento gastado', 'Conector con juego', 'Lectura intermitente'],
 }
 
 const ROW_TONES: Record<ConsumableCondition, string> = {
@@ -36,13 +39,18 @@ export function ConsumableChecklist({ catalog, items, modelConsumableIds, onChan
     onChange(items.map((item) => (item.consumable_id === id ? { ...item, ...patch } : item)))
   }
 
+  // "Todo OK" deja todo presente, funcionando y sin desgaste; "Falta todo" conserva el desgaste por si se corrige
   const setGroup = (ids: number[], isPresent: boolean) => {
     const targets = new Set(ids)
-    onChange(items.map((item) => (targets.has(item.consumable_id) ? { ...item, is_present: isPresent, is_working: isPresent } : item)))
+    onChange(
+      items.map((item) =>
+        targets.has(item.consumable_id) ? { ...item, is_present: isPresent, is_working: isPresent, ...(isPresent && { wear: DEFAULT_WEAR }) } : item,
+      ),
+    )
   }
 
   const addExtra = (id: number) => {
-    onChange([...items, { consumable_id: id, is_present: true, is_working: true, notes: null }])
+    onChange([...items, defaultConsumableState(id)])
   }
 
   const removeExtra = (id: number) => {
@@ -130,8 +138,9 @@ interface ConsumableRowProps {
 
 function ConsumableRow({ name, state, isExtra, onChange, onRemove }: ConsumableRowProps) {
   const condition = consumableCondition(state)
+  const noteTopic: NoteTopic | null = condition !== 'working' ? condition : needsAttention(state.wear) ? 'worn' : null
   const [notesOpen, setNotesOpen] = useState(false)
-  const showNotes = notesOpen || condition !== 'working' || Boolean(state.notes)
+  const showNotes = notesOpen || noteTopic !== null || Boolean(state.notes)
 
   const appendNote = (text: string) => {
     const current = state.notes?.trim()
@@ -172,29 +181,48 @@ function ConsumableRow({ name, state, isExtra, onChange, onRemove }: ConsumableR
           label="Lo tiene"
           checked={state.is_present}
           // Al volver a marcarlo como presente se asume que funciona (caso más común)
-          onChange={(present) => onChange({ is_present: present, is_working: present })}
+          onChange={(present) => onChange({ is_present: present, is_working: present, ...(present && { wear: state.wear ?? DEFAULT_WEAR }) })}
         />
         <Switch
           label="Funciona"
           tone="emerald"
           checked={state.is_working}
           disabled={!state.is_present}
-          onChange={(working) => onChange({ is_working: working })}
+          onChange={(working) => onChange({ is_working: working, ...(working && { wear: state.wear ?? DEFAULT_WEAR }) })}
         />
       </div>
+
+      {condition === 'working' && (
+        <div className="mt-1 flex items-center gap-2">
+          <span className={`size-2.5 shrink-0 rounded-full ${state.wear ? WEAR_DOT_STYLES[state.wear] : 'bg-slate-300 dark:bg-slate-600'}`} aria-hidden="true" />
+          <Select
+            value={state.wear ?? ''}
+            onChange={(event) => onChange({ wear: (event.target.value || null) as ConsumableWear | null })}
+            aria-label={`Desgaste de ${name}`}
+          >
+            {/* Solo aparece en capturas anteriores al desgaste que no se han revisado */}
+            {state.wear === null && <option value="">{UNRATED_WEAR_LABEL}</option>}
+            {WEAR_LEVELS.map((wear) => (
+              <option key={wear} value={wear}>
+                {WEAR_LABELS[wear]}
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
 
       {showNotes && (
         <div className="mt-2 space-y-2">
           <input
             value={state.notes ?? ''}
             onChange={(event) => onChange({ notes: event.target.value || null })}
-            placeholder="Observaciones (p. ej. falso contacto)"
+            placeholder={noteTopic === 'worn' ? 'Describe el desgaste (p. ej. cable con grietas)' : 'Observaciones (p. ej. falso contacto)'}
             maxLength={255}
             className="block h-10 w-full rounded-lg border-0 bg-white px-3 text-sm text-slate-900 ring-1 ring-slate-300 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-teal-600 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500 dark:focus:ring-teal-500"
           />
-          {condition !== 'working' && (
+          {noteTopic && (
             <div className="flex flex-wrap gap-1.5">
-              {QUICK_NOTES[condition].map((text) => (
+              {QUICK_NOTES[noteTopic].map((text) => (
                 <button
                   key={text}
                   type="button"

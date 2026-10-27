@@ -1,9 +1,9 @@
 import ExcelJS from 'exceljs'
 import { downloadBlob, reportFileName } from '../../lib/download'
 import { formatDateTime, formatLongDate } from '../../lib/format'
-import { CONDITION_LABELS, STATUS_LABELS, STATUS_ORDER } from '../../lib/status'
+import { CONDITION_LABELS, STATUS_LABELS, STATUS_ORDER, UNRATED_WEAR_LABEL, WEAR_LABELS, WEAR_SHORT_LABELS, needsAttention } from '../../lib/status'
 import type { MonitorStatus } from '../../lib/types'
-import { buildHospitalReport, type HospitalReport, type NamedBreakdown, type ReportOptions } from '../buildReport'
+import { WEAR_KEYS, buildHospitalReport, type HospitalReport, type NamedBreakdown, type ReportOptions, type WearKey } from '../buildReport'
 
 // Colores ARGB (Excel)
 const BRAND = 'FF0F766E'
@@ -18,6 +18,18 @@ const CONDITION_FILL = {
   working: STATUS_FILL.complete,
   faulty: STATUS_FILL.functional_incomplete,
   missing: STATUS_FILL.non_functional,
+}
+const WEAR_FILL: Record<WearKey, string> = {
+  optimal: 'FFD1FAE5',
+  light: 'FFECFCCB',
+  moderate: 'FFFEF3C7',
+  advanced: 'FFFFEDD5',
+  unrated: 'FFF1F5F9',
+}
+
+function wearLabel(key: WearKey, short = false): string {
+  if (key === 'unrated') return UNRATED_WEAR_LABEL
+  return short ? WEAR_SHORT_LABELS[key] : WEAR_LABELS[key]
 }
 
 /**
@@ -34,6 +46,8 @@ export async function exportHospitalExcel(options: ReportOptions): Promise<void>
   addMonitorsSheet(workbook, report)
   addConsumablesSheet(workbook, report)
   addReplacementSheet(workbook, report)
+  addWearSheet(workbook, report)
+  addWearAttentionSheet(workbook, report)
   addModelsSheet(workbook, report)
 
   const buffer = await workbook.xlsx.writeBuffer()
@@ -133,6 +147,21 @@ function addSummarySheet(workbook: ExcelJS.Workbook, report: HospitalReport): vo
     else current.font = { bold: true }
   }
 
+  // Desgaste (solo de los consumibles que funcionan)
+  row += 2
+  const wearHeader = sheet.getRow(row)
+  wearHeader.values = ['Desgaste (consumibles que funcionan)', 'Cantidad', '% de los que funcionan']
+  styleHeader(wearHeader)
+  const wear = report.wearTotals
+  for (const key of WEAR_KEYS) {
+    if (key === 'unrated' && wear.unrated === 0) continue
+    row++
+    const current = sheet.getRow(row)
+    current.values = [wearLabel(key), wear[key], percent(wear[key], wear.total)]
+    current.getCell(1).fill = fill(WEAR_FILL[key])
+    current.getCell(3).numFmt = '0%'
+  }
+
   // Por servicio
   row += 2
   writeBreakdown(sheet, row, 'Servicio', report.byService)
@@ -164,6 +193,7 @@ function addMonitorsSheet(workbook: ExcelJS.Workbook, report: HospitalReport): v
     { header: 'No funcionan', key: 'faulty', width: 12 },
     { header: 'Detalle de faltantes', key: 'missingDetail', width: 40 },
     { header: 'Detalle de fallas', key: 'faultyDetail', width: 40 },
+    { header: 'Desgaste moderado o avanzado', key: 'wearDetail', width: 40 },
     { header: 'Observaciones', key: 'notes', width: 40 },
     { header: 'Fotos', key: 'photos', width: 8 },
     { header: 'Capturado por', key: 'capturedBy', width: 20 },
@@ -194,6 +224,10 @@ function addMonitorsSheet(workbook: ExcelJS.Workbook, report: HospitalReport): v
       faulty: monitor.faultyCount,
       missingDetail: describe('missing'),
       faultyDetail: describe('faulty'),
+      wearDetail: items
+        .filter((item) => needsAttention(item.wear))
+        .map((item) => `${item.name} (${wearLabel(item.wear!, true).toLowerCase()}${item.notes ? `: ${item.notes}` : ''})`)
+        .join('; '),
       notes: monitor.notes ?? '',
       photos: monitor.photoCount,
       capturedBy: monitor.capturedBy ?? '',
@@ -219,6 +253,7 @@ function addConsumablesSheet(workbook: ExcelJS.Workbook, report: HospitalReport)
     { header: 'Lo tiene', key: 'present', width: 10 },
     { header: 'Funciona', key: 'working', width: 10 },
     { header: 'Estado', key: 'condition', width: 14 },
+    { header: 'Desgaste', key: 'wear', width: 26 },
     { header: 'Observaciones', key: 'notes', width: 36 },
   ])
 
@@ -236,9 +271,12 @@ function addConsumablesSheet(workbook: ExcelJS.Workbook, report: HospitalReport)
           present: yesNo(item.condition !== 'missing'),
           working: yesNo(item.condition === 'working'),
           condition: item.condition === 'missing' ? 'Falta' : CONDITION_LABELS[item.condition],
+          // El desgaste solo aplica a los que funcionan
+          wear: item.condition === 'working' ? wearLabel(item.wear ?? 'unrated') : '',
           notes: item.notes ?? '',
         })
         row.getCell('condition').fill = fill(CONDITION_FILL[item.condition])
+        if (item.condition === 'working') row.getCell('wear').fill = fill(WEAR_FILL[item.wear ?? 'unrated'])
         row.getCell('serial').numFmt = '@'
         row.getCell('inventory').numFmt = '@'
       }
@@ -276,6 +314,61 @@ function addReplacementSheet(workbook: ExcelJS.Workbook, report: HospitalReport)
       total: { formula: `SUM(E2:E${last})` },
     })
     totalRow.font = { bold: true }
+  }
+  styleBody(sheet, 2)
+}
+
+function addWearSheet(workbook: ExcelJS.Workbook, report: HospitalReport): void {
+  const showUnrated = report.wearTotals.unrated > 0
+  const sheet = tableSheet(workbook, 'Desgaste', [
+    { header: 'Consumible', key: 'name', width: 38 },
+    { header: 'Grupo', key: 'group', width: 18 },
+    ...WEAR_KEYS.filter((key) => key !== 'unrated' || showUnrated).map((key) => ({ header: wearLabel(key, true), key, width: 12 })),
+    { header: 'Funcionan', key: 'total', width: 11 },
+  ])
+  for (const item of report.wearByConsumable) {
+    sheet.addRow({ ...item, group: item.groupName })
+  }
+  if (report.wearByConsumable.length > 0) {
+    const last = sheet.rowCount
+    const totals: Record<string, { formula: string }> = {}
+    for (let column = 3; column <= sheet.columnCount; column++) {
+      const letter = sheet.getColumn(column).letter
+      totals[sheet.getColumn(column).key!] = { formula: `SUM(${letter}2:${letter}${last})` }
+    }
+    sheet.addRow({ name: 'Total', ...totals }).font = { bold: true }
+  }
+  styleBody(sheet, 2)
+}
+
+function addWearAttentionSheet(workbook: ExcelJS.Workbook, report: HospitalReport): void {
+  const sheet = tableSheet(workbook, 'Reemplazo prioritario', [
+    { header: 'Desgaste', key: 'wear', width: 26 },
+    { header: 'Consumible', key: 'consumable', width: 34 },
+    { header: 'Grupo', key: 'group', width: 16 },
+    { header: 'Servicio', key: 'service', width: 24 },
+    { header: 'Ubicación', key: 'location', width: 14 },
+    { header: 'Modelo', key: 'model', width: 26 },
+    { header: 'No. de serie', key: 'serial', width: 18 },
+    { header: 'No. nacional de inventario', key: 'inventory', width: 22 },
+    { header: 'Observaciones', key: 'notes', width: 40 },
+  ])
+
+  for (const item of report.wearAttention) {
+    const row = sheet.addRow({
+      wear: wearLabel(item.wear),
+      consumable: item.consumable,
+      group: item.groupName,
+      service: item.serviceName,
+      location: item.location ?? '',
+      model: item.modelLabel,
+      serial: item.serialNumber ?? 'S/N',
+      inventory: item.inventoryNumber ?? '',
+      notes: item.notes ?? '',
+    })
+    row.getCell('wear').fill = fill(WEAR_FILL[item.wear])
+    row.getCell('serial').numFmt = '@'
+    row.getCell('inventory').numFmt = '@'
   }
   styleBody(sheet, 2)
 }

@@ -62,10 +62,14 @@ export interface Catalog {
   monitor_models: MonitorModel[]
 }
 
+export type ConsumableWear = 'optimal' | 'light' | 'moderate' | 'advanced'
+
 export interface ConsumableState {
   consumable_id: number
   is_present: boolean
   is_working: boolean
+  // Solo aplica si lo tiene y funciona; null = sin evaluar (capturas de versiones anteriores)
+  wear: ConsumableWear | null
   notes: string | null
 }
 

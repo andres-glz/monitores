@@ -1,7 +1,7 @@
 import type { CatalogView } from '../hooks/useCatalog'
 import { groupConsumables } from '../lib/consumables'
-import { MOUNT_TYPE_LABELS, consumableCondition, type ConsumableCondition } from '../lib/status'
-import type { Hospital, LocalMonitor, MonitorStatus } from '../lib/types'
+import { MOUNT_TYPE_LABELS, WEAR_LEVELS, consumableCondition, needsAttention, type ConsumableCondition } from '../lib/status'
+import type { ConsumableWear, Hospital, LocalMonitor, MonitorStatus } from '../lib/types'
 
 /**
  * Datos y estadísticas del reporte de un hospital (los usan el PDF y el Excel).
@@ -18,6 +18,34 @@ export interface ReportConsumableLine {
   name: string
   groupName: string
   condition: ConsumableCondition
+  // Solo en los que funcionan; null = sin evaluar
+  wear: ConsumableWear | null
+  notes: string | null
+}
+
+// Desgaste de los consumibles que funcionan ('unrated': capturas sin desgaste)
+export type WearKey = ConsumableWear | 'unrated'
+
+export const WEAR_KEYS: WearKey[] = [...WEAR_LEVELS, 'unrated']
+
+export type WearCounts = Record<WearKey, number> & { total: number }
+
+export interface WearTally extends WearCounts {
+  name: string
+  groupName: string
+}
+
+/** Consumible con desgaste moderado o avanzado, para la lista de reemplazo prioritario */
+export interface WearAttentionLine {
+  monitorUuid: string
+  serviceName: string
+  location: string | null
+  modelLabel: string
+  serialNumber: string | null
+  inventoryNumber: string | null
+  consumable: string
+  groupName: string
+  wear: ConsumableWear
   notes: string | null
 }
 
@@ -85,6 +113,9 @@ export interface HospitalReport {
   faultyByConsumable: ConditionTally[]
   replacementNeeds: ConditionTally[]
   topNotes: { note: string; count: number }[]
+  wearTotals: WearCounts
+  wearByConsumable: WearTally[]
+  wearAttention: WearAttentionLine[]
   monitorsWithIssues: number
   nonFunctionalMonitors: ReportMonitor[]
   monitors: ReportMonitor[]
@@ -101,6 +132,10 @@ function tally<T extends StatusBreakdown>(target: T, status: MonitorStatus): voi
   target[status]++
 }
 
+function emptyWearCounts(): WearCounts {
+  return { optimal: 0, light: 0, moderate: 0, advanced: 0, unrated: 0, total: 0 }
+}
+
 function sortBreakdown(items: NamedBreakdown[]): NamedBreakdown[] {
   return items.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'es'))
 }
@@ -114,6 +149,9 @@ export function buildHospitalReport({ hospital, monitors, catalog, generatedBy }
   const byGroup = new Map<string, ConditionTally>()
   const notes = new Map<string, { note: string; count: number }>()
   const consumableTotals = { total: 0, working: 0, faulty: 0, missing: 0 }
+  const wearTotals = emptyWearCounts()
+  const wearByConsumable = new Map<number, WearTally>()
+  const wearAttention: WearAttentionLine[] = []
 
   const reportMonitors: ReportMonitor[] = monitors.map((monitor) => {
     const model = catalog.modelById.get(monitor.monitor_model_id)
@@ -171,7 +209,33 @@ export function buildHospitalReport({ hospital, monitors, catalog, generatedBy }
           }
         }
 
-        return { name: consumable.name, groupName: section.groupName, condition, notes: state.notes }
+        // El desgaste solo se registra en los que funcionan (datos anteriores pueden no traerlo)
+        const wear = condition === 'working' ? (state.wear ?? null) : null
+        if (condition === 'working') {
+          const wearTally =
+            wearByConsumable.get(consumable.id) ??
+            wearByConsumable.set(consumable.id, { name: consumable.name, groupName: section.groupName, ...emptyWearCounts() }).get(consumable.id)!
+          for (const target of [wearTotals, wearTally]) {
+            target[wear ?? 'unrated']++
+            target.total++
+          }
+          if (wear && needsAttention(wear)) {
+            wearAttention.push({
+              monitorUuid: monitor.uuid,
+              serviceName,
+              location: monitor.location,
+              modelLabel,
+              serialNumber: monitor.serial_number,
+              inventoryNumber: monitor.inventory_number,
+              consumable: consumable.name,
+              groupName: section.groupName,
+              wear,
+              notes: state.notes,
+            })
+          }
+        }
+
+        return { name: consumable.name, groupName: section.groupName, condition, wear, notes: state.notes }
       }),
     }))
 
@@ -226,6 +290,19 @@ export function buildHospitalReport({ hospital, monitors, catalog, generatedBy }
       .filter((item) => item.missing + item.faulty > 0)
       .sort((a, b) => b.missing + b.faulty - (a.missing + a.faulty) || a.name.localeCompare(b.name, 'es')),
     topNotes: [...notes.values()].sort((a, b) => b.count - a.count).slice(0, 8),
+    wearTotals,
+    // Primero los que tienen más desgaste avanzado y moderado
+    wearByConsumable: [...wearByConsumable.values()].sort(
+      (a, b) => b.advanced - a.advanced || b.moderate - a.moderate || b.light - a.light || a.name.localeCompare(b.name, 'es'),
+    ),
+    // Primero el desgaste avanzado (reemplazo prioritario), luego por servicio y ubicación
+    wearAttention: wearAttention.sort(
+      (a, b) =>
+        WEAR_LEVELS.indexOf(b.wear) - WEAR_LEVELS.indexOf(a.wear) ||
+        a.serviceName.localeCompare(b.serviceName, 'es') ||
+        (a.location ?? '').localeCompare(b.location ?? '', 'es', { numeric: true }) ||
+        a.consumable.localeCompare(b.consumable, 'es'),
+    ),
     monitorsWithIssues: reportMonitors.filter((monitor) => monitor.missingCount + monitor.faultyCount > 0).length,
     nonFunctionalMonitors: reportMonitors.filter((monitor) => monitor.status === 'non_functional'),
     monitors: reportMonitors,

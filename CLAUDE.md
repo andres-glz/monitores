@@ -76,6 +76,13 @@ La regla (No funcional / Completo / Funcional incompleto) está **duplicada a pr
 
 Cualquier cambio a la regla va en los dos. En `lib/status.ts` también están los colores por dictamen: `STATUS_STYLES` (clases de Tailwind, con sus variantes `dark:`) y `STATUS_HEX` (para el PDF y el Excel).
 
+### Desgaste de consumibles
+
+- `monitor_consumables.wear` (`optimal`, `light`, `moderate`, `advanced`) solo aplica si el consumible se tiene y funciona; en otro caso es `null`. Es informativo y **no entra en el dictamen**. La lista está en `MonitorConsumable::WEAR_LEVELS` y en `WEAR_LEVELS` de `lib/status.ts`, con sus etiquetas y colores (`WEAR_HEX` para PDF y Excel; lima y naranja son exclusivos del desgaste).
+- `null` en un consumible que funciona significa *sin evaluar*. La migración `AddWearToMonitorConsumables` y la versión 2 de Dexie (`offline/db.ts`) ponen `optimal` en lo que ya estaba capturado, sin tocar `updated_at`.
+- **Compatibilidad**: si el PUT no trae la llave `wear` (una versión anterior de la app en caché o con cambios en cola), `MonitorService` conserva el valor guardado mientras el consumible siga funcionando.
+- En el formulario el desgaste se conserva al apagar los interruptores y se descarta al guardar. “Todo OK” lo regresa a `optimal`. Moderado y avanzado abren las observaciones y forman la lista de reemplazo prioritario de los reportes (`wearAttention` en `buildReport.ts`).
+
 ### API (PHP 8.3, Slim 4)
 
 - `bootstrap.php` arma la app:

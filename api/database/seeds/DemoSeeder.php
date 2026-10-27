@@ -54,6 +54,7 @@ final class DemoSeeder extends AbstractSeed
         $serviceIds = array_map('intval', $pdo->query('SELECT id FROM services ORDER BY id LIMIT 6')->fetchAll(PDO::FETCH_COLUMN));
         $models = $pdo->query('SELECT id, name FROM monitor_models ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
         $faultNotes = ['Falso contacto', 'Cable pelado', 'Conector dañado', 'No da lectura', 'Desgastado'];
+        $wearNotes = ['Cable con grietas', 'Clip flojo', 'Recubrimiento gastado', 'Conector con juego'];
 
         // Semilla fija para que los datos demo sean siempre los mismos
         mt_srand(42);
@@ -71,11 +72,18 @@ final class DemoSeeder extends AbstractSeed
                 $isPresent = $roll > 14;
                 $isWorking = $isPresent && $roll > 24;
                 $allOk = $allOk && $isPresent && $isWorking;
+                $wear = $isWorking ? $this->wear(mt_rand(1, 100)) : null;
+                $notes = match (true) {
+                    $isPresent && ! $isWorking => $faultNotes[mt_rand(0, count($faultNotes) - 1)],
+                    in_array($wear, ['moderate', 'advanced'], true) => $wearNotes[mt_rand(0, count($wearNotes) - 1)],
+                    default => null,
+                };
                 $consumableRows[] = [
                     'consumable_id' => (int) $consumableId,
                     'is_present' => (int) $isPresent,
                     'is_working' => (int) $isWorking,
-                    'notes' => $isPresent && ! $isWorking ? $faultNotes[mt_rand(0, count($faultNotes) - 1)] : null,
+                    'wear' => $wear,
+                    'notes' => $notes,
                 ];
             }
 
@@ -116,6 +124,19 @@ final class DemoSeeder extends AbstractSeed
         $value = $statement->fetchColumn();
 
         return $value === false ? null : (int) $value;
+    }
+
+    /**
+     * Reparte el desgaste: la mayoría óptimos y pocos avanzados.
+     */
+    private function wear(int $roll): string
+    {
+        return match (true) {
+            $roll <= 60 => 'optimal',
+            $roll <= 80 => 'light',
+            $roll <= 93 => 'moderate',
+            default => 'advanced',
+        };
     }
 
     private function uuid(): string

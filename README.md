@@ -8,6 +8,7 @@ Aplicación web para hacer **inventario y diagnóstico** de los monitores de sig
 - **Captura ágil** de monitores por hospital:
   - El servicio y el modelo del registro anterior se conservan para el siguiente (“Guardar y siguiente”).
   - Los consumibles inician como *presentes y funcionando*: solo se marcan las excepciones. Hay botones rápidos por grupo (“Falta todo” / “Todo OK”) y frases rápidas para observaciones (“Falso contacto”, “Cable dañado”…).
+  - **Desgaste** de cada consumible que se tiene y funciona: Óptimo (Sin desgaste), que es el valor inicial y el que pone “Todo OK”; Desgaste leve; Desgaste moderado (A vigilar); y Desgaste avanzado (Reemplazo prioritario). En moderado y avanzado se abren las observaciones para dar detalles. El desgaste es informativo: no cambia el dictamen.
   - Lectura de número de serie / inventario con la **cámara** (código de barras o QR).
   - **Fotos** de evidencia (se reducen automáticamente).
   - Ubicación (cama/cubículo) con sugerencias, aviso de **duplicados** por serie o NNI y atajo `Ctrl + Enter` para guardar.
@@ -18,8 +19,8 @@ Aplicación web para hacer **inventario y diagnóstico** de los monitores de sig
   - Filtros por dictamen, marca, modelo (en cascada: solo los modelos de la marca elegida) y servicio, más la búsqueda, que también acepta la serie o el NNI leídos con la **cámara**.
   - En la tabla se eligen las columnas que se muestran (si son muchas, la tabla se desliza hacia los lados), se ordena tocando el encabezado y cada renglón abre el detalle del monitor.
   - Los filtros quedan en la dirección de la página, así que se conservan al abrir un monitor y regresar. La vista y las columnas elegidas se recuerdan en cada dispositivo.
-- **Reporte PDF** “Diagnóstico de monitores de signos vitales. *Hospital*”: indicadores y gráfica en la primera página, detalle por equipo con consumibles funcionales / no funcionales / faltantes, y al final estadísticas (faltantes y fallas por tipo, estado por grupo, necesidades de reposición, fallas más frecuentes, equipos por modelo y equipos no funcionales).
-- **Excel** con hojas: Resumen, Monitores, Consumibles, Reposición y Por modelo.
+- **Reporte PDF** “Diagnóstico de monitores de signos vitales. *Hospital*”: indicadores y gráfica en la primera página, detalle por equipo con consumibles funcionales / no funcionales / faltantes y su desgaste, y al final estadísticas (faltantes y fallas por tipo, estado por grupo, necesidades de reposición, desgaste por tipo, reemplazo prioritario y consumibles a vigilar, fallas más frecuentes, equipos por modelo y equipos no funcionales).
+- **Excel** con hojas: Resumen, Monitores, Consumibles (con columna de desgaste), Reposición, Desgaste, Reemplazo prioritario y Por modelo.
 - **Usuarios con inicio de sesión** (todos con el mismo nivel de acceso); se registra quién capturó cada equipo.
 - **Modo oscuro**: claro, oscuro o igual que el dispositivo (*Configuración → Apariencia*, o el botón de sol / luna en la barra superior). Se recuerda en cada dispositivo.
 
@@ -81,7 +82,7 @@ monitores/
 | `consumable_groups`, `consumables` | Grupos (SpO2, PANI…) y sus consumibles |
 | `monitor_model_consumables` | Consumibles que lleva cada modelo |
 | `monitors` | Equipo registrado: hospital, servicio, modelo, serie, NNI, ubicación, si funciona, dictamen, observaciones |
-| `monitor_consumables` | Por equipo y consumible: lo tiene, funciona, observaciones |
+| `monitor_consumables` | Por equipo y consumible: lo tiene, funciona, desgaste, observaciones |
 | `monitor_photos` | Fotos de evidencia (archivo en `storage/photos/`) |
 | `deleted_monitors` | Registro de eliminaciones para sincronizar dispositivos |
 

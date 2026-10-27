@@ -52,6 +52,7 @@ return [
         'consumables.*.consumable_id' => 'consumible',
         'consumables.*.is_present' => 'lo tiene',
         'consumables.*.is_working' => 'funciona',
+        'consumables.*.wear' => 'desgaste',
         'consumables.*.notes' => 'observaciones del consumible',
         'uuid' => 'identificador',
     ],

@@ -1,4 +1,4 @@
-import type { ConsumableState, MonitorStatus, MountType } from './types'
+import type { ConsumableState, ConsumableWear, MonitorStatus, MountType } from './types'
 
 /**
  * Regla del dictamen (la misma que api/src/Services/MonitorStatus.php):
@@ -64,4 +64,51 @@ export const CONDITION_LABELS: Record<ConsumableCondition, string> = {
   working: 'Funciona',
   faulty: 'No funciona',
   missing: 'Falta',
+}
+
+/**
+ * Desgaste de un consumible que se tiene y funciona (la misma lista que MonitorConsumable::WEAR_LEVELS).
+ * Es informativo: no cambia el dictamen del monitor.
+ */
+export const WEAR_LEVELS: ConsumableWear[] = ['optimal', 'light', 'moderate', 'advanced']
+
+export const DEFAULT_WEAR: ConsumableWear = 'optimal'
+
+export const WEAR_LABELS: Record<ConsumableWear, string> = {
+  optimal: 'Óptimo (Sin desgaste)',
+  light: 'Desgaste leve',
+  moderate: 'Desgaste moderado (A vigilar)',
+  advanced: 'Desgaste avanzado (Reemplazo prioritario)',
+}
+
+// Etiquetas cortas para tablas y gráficas de los reportes
+export const WEAR_SHORT_LABELS: Record<ConsumableWear, string> = {
+  optimal: 'Óptimo',
+  light: 'Leve',
+  moderate: 'Moderado',
+  advanced: 'Avanzado',
+}
+
+export const UNRATED_WEAR_LABEL = 'Sin evaluar'
+
+export const WEAR_DOT_STYLES: Record<ConsumableWear, string> = {
+  optimal: 'bg-emerald-500',
+  light: 'bg-lime-500',
+  moderate: 'bg-amber-500',
+  advanced: 'bg-orange-600',
+}
+
+// Colores hexadecimales para PDF y Excel
+export const WEAR_HEX: Record<ConsumableWear, string> = {
+  optimal: '#10b981',
+  light: '#84cc16',
+  moderate: '#f59e0b',
+  advanced: '#ea580c',
+}
+
+export const UNRATED_WEAR_HEX = '#94a3b8'
+
+/** Desgaste que pide observaciones y se incluye en la lista de reemplazo prioritario */
+export function needsAttention(wear: ConsumableWear | null | undefined): boolean {
+  return wear === 'moderate' || wear === 'advanced'
 }

@@ -19,7 +19,7 @@ import { useCatalogMutation } from '../hooks/useCatalogMutation'
 import { useHospitalMonitors, useMonitor } from '../hooks/useMonitors'
 import { api } from '../lib/api'
 import { loadCapturePrefs, loadRecentModels, pushRecentModel, saveCapturePrefs } from '../lib/capturePrefs'
-import { groupConsumables } from '../lib/consumables'
+import { defaultConsumableState, groupConsumables } from '../lib/consumables'
 import { compressImage } from '../lib/image'
 import { countConditions } from '../lib/monitorView'
 import { emptyToNull, normalizeCode } from '../lib/format'
@@ -54,7 +54,7 @@ function defaultConsumables(catalog: CatalogView, modelId: string, previous: Con
   const previousById = new Map(previous.map((item) => [item.consumable_id, item]))
   return groupConsumables(catalog, model.consumable_ids)
     .flatMap((section) => section.items)
-    .map((item) => previousById.get(item.id) ?? { consumable_id: item.id, is_present: true, is_working: true, notes: null })
+    .map((item) => previousById.get(item.id) ?? defaultConsumableState(item.id))
 }
 
 function blankForm(catalog: CatalogView, hospitalId: number): FormState {
@@ -268,11 +268,11 @@ function MonitorForm({ catalog, hospitalId, hospitalName, existing }: MonitorFor
       location: emptyToNull(form.location),
       is_operational: form.isOperational,
       notes: emptyToNull(form.notes),
-      consumables: form.consumables.map((item) => ({
-        ...item,
-        is_working: item.is_present && item.is_working,
-        notes: emptyToNull(item.notes),
-      })),
+      consumables: form.consumables.map((item) => {
+        const isWorking = item.is_present && item.is_working
+        // El desgaste se conserva en el formulario al apagar los interruptores, pero solo se guarda si funciona
+        return { ...item, is_working: isWorking, wear: isWorking ? item.wear : null, notes: emptyToNull(item.notes) }
+      }),
     }
 
     setSaving(true)

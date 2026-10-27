@@ -88,6 +88,7 @@ final class Monitor extends Model
                 'consumable_id' => $item->consumable_id,
                 'is_present' => $item->is_present,
                 'is_working' => $item->is_working,
+                'wear' => $item->wear,
                 'notes' => $item->notes,
             ])->values()->all(),
             'photos' => $this->photos->map(fn (MonitorPhoto $photo) => [

@@ -1,5 +1,6 @@
 import { Dexie, type EntityTable } from 'dexie'
-import type { Catalog, LocalMonitor, MonitorInput } from '../lib/types'
+import { DEFAULT_WEAR } from '../lib/status'
+import type { Catalog, ConsumableState, LocalMonitor, MonitorInput } from '../lib/types'
 
 export type OutboxType = 'upsert_monitor' | 'delete_monitor' | 'upload_photo' | 'delete_photo'
 
@@ -45,7 +46,30 @@ class AppDatabase extends Dexie {
       photoBlobs: 'uuid, monitor_uuid',
       meta: 'key',
     })
+    // v2: desgaste de consumibles. Los ya capturados (incluidos los pendientes de enviar) quedan como óptimos
+    this.version(2).upgrade(async (tx) => {
+      await tx
+        .table<LocalMonitor>('monitors')
+        .toCollection()
+        .modify((monitor) => {
+          monitor.consumables = withDefaultWear(monitor.consumables)
+        })
+      await tx
+        .table<OutboxItem>('outbox')
+        .toCollection()
+        .modify((item) => {
+          if (item.payload) item.payload.consumables = withDefaultWear(item.payload.consumables)
+        })
+    })
   }
+}
+
+/**
+ * Completa el desgaste en datos guardados antes de que existiera (misma regla que la migración del servidor):
+ * los que se tienen y funcionan quedan como óptimos.
+ */
+function withDefaultWear(items: ConsumableState[]): ConsumableState[] {
+  return items.map((item) => ({ ...item, wear: item.wear !== undefined ? item.wear : item.is_present && item.is_working ? DEFAULT_WEAR : null }))
 }
 
 export const db = new AppDatabase()

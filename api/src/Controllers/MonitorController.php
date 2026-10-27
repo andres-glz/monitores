@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Models\MonitorConsumable;
 use App\Models\User;
 use App\Services\MonitorService;
 use App\Support\HttpError;
 use App\Support\Json;
 use App\Support\Validator;
+use Illuminate\Validation\Rule;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -45,6 +47,7 @@ final class MonitorController
             'consumables.*.consumable_id' => ['required', 'integer', 'distinct', 'exists:consumables,id'],
             'consumables.*.is_present' => ['required', 'boolean'],
             'consumables.*.is_working' => ['required', 'boolean'],
+            'consumables.*.wear' => ['nullable', Rule::in(MonitorConsumable::WEAR_LEVELS)],
             'consumables.*.notes' => ['nullable', 'string', 'max:255'],
         ]);
 

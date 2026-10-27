@@ -27,13 +27,7 @@ final class MonitorService
     public function save(string $uuid, array $data, User $user): Monitor
     {
         return Capsule::connection()->transaction(function () use ($uuid, $data, $user) {
-            $consumables = array_map(fn (array $item) => [
-                'consumable_id' => (int) $item['consumable_id'],
-                'is_present' => (bool) $item['is_present'],
-                // Si no lo tiene, no puede funcionar
-                'is_working' => (bool) $item['is_present'] && (bool) $item['is_working'],
-                'notes' => $item['notes'] ?? null,
-            ], $data['consumables'] ?? []);
+            $consumables = array_map(fn (array $item) => $this->consumableRow($item), $data['consumables'] ?? []);
 
             $isOperational = (bool) $data['is_operational'];
 
@@ -102,6 +96,32 @@ final class MonitorService
         $monitor->updated_by = $user->id;
         $monitor->updated_at = Carbon::now();
         $monitor->save();
+    }
+
+    /**
+     * Normaliza el estado de un consumible: si no lo tiene no puede funcionar, y el desgaste solo aplica si funciona.
+     */
+    private function consumableRow(array $item): array
+    {
+        $isPresent = (bool) $item['is_present'];
+        $isWorking = $isPresent && (bool) $item['is_working'];
+
+        $row = [
+            'consumable_id' => (int) $item['consumable_id'],
+            'is_present' => $isPresent,
+            'is_working' => $isWorking,
+            'notes' => $item['notes'] ?? null,
+        ];
+
+        // Una versión anterior de la app (aún en caché o con cambios en cola) no envía el desgaste:
+        // en ese caso se conserva el valor guardado mientras siga funcionando
+        if (array_key_exists('wear', $item)) {
+            $row['wear'] = $isWorking ? $item['wear'] : null;
+        } elseif (! $isWorking) {
+            $row['wear'] = null;
+        }
+
+        return $row;
     }
 
     /**
